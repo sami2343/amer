@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import logging
+import math
 from sklearn.metrics import (
     accuracy_score, f1_score, precision_score, recall_score,
     roc_auc_score, confusion_matrix, classification_report
@@ -14,6 +15,26 @@ logger = logging.getLogger(__name__)
 
 class MetricsTracker:
     """Tracks and manages performance metrics for federated learning."""
+    
+    def _sanitize_metrics(self, data):
+        """Recursively sanitize NaN and Infinity values in data structure."""
+        if isinstance(data, dict):
+            return {k: self._sanitize_metrics(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_metrics(item) for item in data]
+        elif isinstance(data, float):
+            if math.isnan(data):
+                return 0.0
+            elif math.isinf(data):
+                return 0.0
+            return data
+        elif isinstance(data, np.floating):
+            if np.isnan(data):
+                return 0.0
+            elif np.isinf(data):
+                return 0.0
+            return float(data)
+        return data
     
     def __init__(self, save_dir: str):
         self.save_dir = save_dir
@@ -62,7 +83,7 @@ class MetricsTracker:
         try:
             auto_save_path = os.path.join(self.save_dir, self.auto_save_file)
             save_data = {
-                'metrics_history': self.metrics_history,
+                'metrics_history': self._sanitize_metrics(self.metrics_history),
                 'round_number': self.round_number,
                 'last_updated': datetime.now().isoformat()
             }
@@ -104,7 +125,8 @@ class MetricsTracker:
             cm = confusion_matrix(y_true, y_pred)
             metrics['confusion_matrix'] = cm.tolist()
             
-            return metrics
+            # Sanitize all metrics before returning
+            return self._sanitize_metrics(metrics)
             
         except Exception as e:
             logger.error(f"Error calculating metrics: {e}")

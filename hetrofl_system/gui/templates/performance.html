@@ -591,21 +591,31 @@ class PerformanceAnalytics {
         this.showLoadingState();
         
         try {
-            // Load all required data
-            await Promise.all([
+            // Load data with individual error handling
+            const results = await Promise.allSettled([
                 this.loadMetricsHistory(),
                 this.loadLatestMetrics(),
                 this.loadImprovements()
             ]);
             
-            // Initialize all visualizations
+            // Check results and log any failures
+            results.forEach((result, index) => {
+                const names = ['metrics history', 'latest metrics', 'improvements'];
+                if (result.status === 'rejected') {
+                    console.error(`Failed to load ${names[index]}:`, result.reason);
+                } else {
+                    console.log(`Successfully loaded ${names[index]}`);
+                }
+            });
+            
+            // Initialize visualizations even if some data failed to load
             this.initializeCharts();
             this.updateModelComparison();
             this.updatePerformanceSummary();
             this.updateDetailedTable();
             
         } catch (error) {
-            console.error('Error loading initial data:', error);
+            console.error('Error in loadInitialData:', error);
             showAlert('Error loading performance data: ' + error.message, 'danger');
         } finally {
             this.hideLoadingState();
@@ -1038,7 +1048,14 @@ class PerformanceAnalytics {
     }
     
     updatePerformanceSummary() {
-        if (!this.metricsData || !this.latestMetrics) return;
+        if (!this.metricsData || !this.latestMetrics) {
+            // Set fallback values instead of returning early
+            document.getElementById('total-rounds').textContent = '0';
+            document.getElementById('best-accuracy').textContent = '0.0%';
+            document.getElementById('avg-training-time').textContent = '0.0s';
+            document.getElementById('active-models').textContent = '0';
+            return;
+        }
         
         // Calculate total rounds
         const globalRounds = this.metricsData.global ? this.metricsData.global.length : 0;

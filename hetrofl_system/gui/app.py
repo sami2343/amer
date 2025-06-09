@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from flask_socketio import SocketIO, emit
 import json
 import logging
+import math
 import os
 import sys
 import threading
@@ -28,6 +29,28 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+def sanitize_for_json(data):
+    """Sanitize data to ensure safe JSON serialization."""
+    if isinstance(data, dict):
+        return {k: sanitize_for_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_for_json(item) for item in data]
+    elif isinstance(data, float):
+        if math.isnan(data):
+            return 0.0
+        elif math.isinf(data):
+            return 0.0
+        return data
+    elif isinstance(data, np.floating):
+        if np.isnan(data):
+            return 0.0
+        elif np.isinf(data):
+            return 0.0
+        return float(data)
+    elif isinstance(data, np.integer):
+        return int(data)
+    return data
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -318,7 +341,7 @@ def get_latest_metrics():
                     'timestamp': datetime.now().isoformat()
                 }
         
-        return jsonify(latest_metrics)
+        return jsonify(sanitize_for_json(latest_metrics))
         
     except Exception as e:
         logger.error(f"Error in get_latest_metrics: {e}")
@@ -437,7 +460,7 @@ def get_metrics_history():
             'timestamp': datetime.now().isoformat()
         }
         
-        return jsonify(history)
+        return jsonify(sanitize_for_json(history))
         
     except Exception as e:
         error_msg = f"Error retrieving metrics history: {str(e)}"
@@ -509,7 +532,7 @@ def get_improvements():
                     'recall': 0.0
                 }
         
-        return jsonify(improvements)
+        return jsonify(sanitize_for_json(improvements))
         
     except Exception as e:
         return jsonify({'error': str(e)})
