@@ -1,223 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}HETROFL Workflow - System Visualization{% endblock %}
+{% block title %}HETROFL Workflow - Interactive 3D Visualization{% endblock %}
 
 {% block extra_css %}
-<style>
-    .flow-container {
-        background: var(--card-bg);
-        border-radius: 0.75rem;
-        box-shadow: var(--shadow);
-        padding: 2rem;
-        height: calc(100vh - 250px);
-        min-height: 600px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .flow-controls {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        z-index: 100;
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .flow-control-btn {
-        background: var(--light-dark);
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-        padding: 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .flow-control-btn:hover {
-        background: var(--primary-color);
-        color: white;
-        transform: translateY(-2px);
-    }
-    
-    .flow-control-btn.active {
-        background: var(--primary-color);
-        color: white;
-    }
-    
-    .flow-stage {
-        position: absolute;
-        background: var(--light-dark);
-        border: 1px solid var(--border-color);
-        border-radius: 1rem;
-        padding: 1rem;
-        width: 200px;
-        text-align: center;
-        transition: all 0.5s ease;
-        opacity: 0;
-        transform: scale(0.8);
-        z-index: 10;
-    }
-    
-    .flow-stage.active {
-        opacity: 1;
-        transform: scale(1);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary-light);
-    }
-    
-    .flow-stage-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-    
-    .flow-stage-title {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    
-    .flow-stage-description {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-    }
-    
-    .flow-arrow {
-        position: absolute;
-        height: 2px;
-        background: var(--border-color);
-        transform-origin: left center;
-        z-index: 5;
-    }
-    
-    .flow-arrow::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: -4px;
-        width: 0;
-        height: 0;
-        border-top: 5px solid transparent;
-        border-bottom: 5px solid transparent;
-        border-left: 8px solid var(--border-color);
-    }
-    
-    .flow-arrow.active {
-        background: var(--primary-color);
-        box-shadow: 0 0 10px var(--primary-color);
-    }
-    
-    .flow-arrow.active::after {
-        border-left-color: var(--primary-color);
-    }
-    
-    .data-packet {
-        position: absolute;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        box-shadow: 0 0 10px var(--primary-color);
-        z-index: 15;
-        opacity: 0;
-    }
-    
-    .flow-legend {
-        position: absolute;
-        bottom: 1rem;
-        left: 1rem;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 0.5rem;
-        padding: 1rem;
-        z-index: 100;
-    }
-    
-    .flow-legend-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-    
-    .flow-legend-icon {
-        width: 16px;
-        height: 16px;
-        margin-right: 0.5rem;
-    }
-    
-    .flow-legend-text {
-        font-size: 0.8rem;
-    }
-    
-    .flow-stage.local-model {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
-        border-color: var(--success-color);
-    }
-    
-    .flow-stage.global-model {
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(99, 102, 241, 0.1));
-        border-color: var(--primary-color);
-    }
-    
-    .flow-stage.data {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
-        border-color: var(--warning-color);
-    }
-    
-    .flow-info-panel {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        width: 250px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 0.75rem;
-        padding: 1rem;
-        z-index: 100;
-    }
-    
-    .flow-info-title {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    
-    .flow-info-description {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        margin-bottom: 1rem;
-    }
-    
-    .flow-info-step {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .flow-info-step.active {
-        background: var(--light-dark);
-        box-shadow: var(--shadow);
-    }
-    
-    .flow-info-step-number {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        margin-right: 0.75rem;
-    }
-    
-    .flow-info-step-text {
-        font-size: 0.85rem;
-    }
-</style>
+<!-- 3D Workflow Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workflow-3d.css') }}">
+
+<!-- 3D Libraries -->
+<script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gsap.min.js') }}"></script>
+
+<!-- SEO and Social Meta Tags -->
+<meta name="description" content="Interactive 3D visualization of HETROFL federated learning workflow with real-time monitoring and advanced animations">
+<meta name="keywords" content="federated learning, 3D visualization, machine learning, HETROFL, workflow">
+<meta property="og:title" content="HETROFL 3D Workflow Visualization">
+<meta property="og:description" content="Experience federated learning in stunning 3D with real-time data flow visualization">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Accessibility and Performance -->
+<link rel="preload" href="{{ url_for('static', filename='js/three.min.js') }}" as="script">
+<link rel="preload" href="{{ url_for('static', filename='js/gsap.min.js') }}" as="script">
 {% endblock %}
 
 {% block content %}
@@ -230,12 +33,26 @@
                     <p class="text-muted mb-0">Interactive visualization of the federated learning system workflow</p>
                 </div>
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="start-animation-btn">
+                    <button class="btn btn-primary" id="start-animation-btn" aria-label="Start workflow animation">
                         <i class="fas fa-play me-2"></i>Start Animation
                     </button>
-                    <button class="btn btn-outline-secondary" id="reset-animation-btn">
+                    <button class="btn btn-outline-secondary" id="reset-animation-btn" aria-label="Reset view and animation">
                         <i class="fas fa-undo me-2"></i>Reset
                     </button>
+                    <button class="btn btn-outline-info" id="help-btn" aria-label="Show interactive help">
+                        <i class="fas fa-question-circle me-2"></i>Help
+                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Quality settings">
+                            <i class="fas fa-cog me-2"></i>Quality
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-quality="low">Low</a></li>
+                            <li><a class="dropdown-item" href="#" data-quality="medium">Medium</a></li>
+                            <li><a class="dropdown-item" href="#" data-quality="high">High</a></li>
+                            <li><a class="dropdown-item" href="#" data-quality="ultra">Ultra</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -243,526 +60,595 @@
     
     <div class="row">
         <div class="col-12">
-            <div class="flow-container" id="flow-diagram">
-                <!-- Flow controls -->
-                <div class="flow-controls">
-                    <button class="flow-control-btn active" data-speed="1">
-                        <i class="fas fa-play"></i> Normal
-                    </button>
-                    <button class="flow-control-btn" data-speed="0.5">
-                        <i class="fas fa-fast-forward"></i> Fast
-                    </button>
-                    <button class="flow-control-btn" data-speed="2">
-                        <i class="fas fa-slow-motion"></i> Slow
-                    </button>
-                </div>
-                
-                <!-- Flow information panel -->
-                <div class="flow-info-panel">
-                    <div class="flow-info-title">HETROFL Workflow</div>
-                    <div class="flow-info-description">
-                        Heterogeneous Federated Learning workflow with three local models and one global model.
+            <!-- 3D Workflow Container -->
+            <div class="workflow-3d-container holographic-border" id="workflow-3d-container">
+                <!-- 3D Controls Panel -->
+                <div class="workflow-3d-controls glass-panel-enhanced sci-fi-panel">
+                    <div class="control-group">
+                        <div class="control-group-title">Animation</div>
+                        <div class="control-buttons">
+                            <button class="control-btn" id="start-3d-animation" title="Start workflow animation (Space)">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                            <button class="control-btn" id="pause-3d-animation" title="Pause animation">
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button class="control-btn" id="reset-3d-animation" title="Reset workflow (R)">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
                     </div>
                     
-                    <div class="flow-info-steps">
-                        <div class="flow-info-step" id="step-1">
-                            <div class="flow-info-step-number">1</div>
-                            <div class="flow-info-step-text">Local model training on device data</div>
+                    <div class="control-group">
+                        <div class="control-group-title">Speed</div>
+                        <div class="speed-control">
+                            <input type="range" class="speed-slider" id="speed-slider" 
+                                   min="0.1" max="3" step="0.1" value="1" title="Animation speed">
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Slow</small>
+                                <small class="text-muted">Fast</small>
+                            </div>
                         </div>
-                        <div class="flow-info-step" id="step-2">
-                            <div class="flow-info-step-number">2</div>
-                            <div class="flow-info-step-text">Parameter extraction and encoding</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-group-title">Camera Views</div>
+                        <div class="control-buttons">
+                            <button class="control-btn active" id="view-perspective" title="3D perspective view (1)">
+                                <i class="fas fa-cube"></i> 3D
+                            </button>
+                            <button class="control-btn" id="view-top" title="Top-down view (2)">
+                                <i class="fas fa-eye"></i> Top
+                            </button>
+                            <button class="control-btn" id="view-side" title="Side view (3)">
+                                <i class="fas fa-arrows-alt-h"></i> Side
+                            </button>
+                            <button class="control-btn" id="view-overview" title="Overview (4)">
+                                <i class="fas fa-expand"></i> Overview
+                            </button>
                         </div>
-                        <div class="flow-info-step" id="step-3">
-                            <div class="flow-info-step-number">3</div>
-                            <div class="flow-info-step-text">Secure aggregation of model updates</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-group-title">Effects</div>
+                        <div class="control-buttons">
+                            <button class="control-btn active" id="toggle-particles" title="Toggle particle effects" aria-pressed="true">
+                                <i class="fas fa-sparkles"></i> Particles
+                            </button>
+                            <button class="control-btn active" id="toggle-glow" title="Toggle glow effects" aria-pressed="true">
+                                <i class="fas fa-sun"></i> Glow
+                            </button>
+                            <button class="control-btn active" id="toggle-fog" title="Toggle fog effects" aria-pressed="true">
+                                <i class="fas fa-cloud"></i> Fog
+                            </button>
+                            <button class="control-btn" id="toggle-shadows" title="Toggle shadow effects" aria-pressed="false">
+                                <i class="fas fa-adjust"></i> Shadows
+                            </button>
                         </div>
-                        <div class="flow-info-step" id="step-4">
-                            <div class="flow-info-step-number">4</div>
-                            <div class="flow-info-step-text">Global model update</div>
-                        </div>
-                        <div class="flow-info-step" id="step-5">
-                            <div class="flow-info-step-number">5</div>
-                            <div class="flow-info-step-text">Global model distribution</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-group-title">Tools</div>
+                        <div class="control-buttons">
+                            <button class="control-btn" id="show-help" title="Show interactive help (H)" aria-label="Show help tutorial">
+                                <i class="fas fa-question-circle"></i> Help
+                            </button>
+                            <button class="control-btn" id="toggle-fullscreen" title="Toggle fullscreen (F)" aria-label="Enter fullscreen mode">
+                                <i class="fas fa-expand"></i> Fullscreen
+                            </button>
+                            <button class="control-btn" id="reset-camera" title="Reset camera position (R)" aria-label="Reset camera to default position">
+                                <i class="fas fa-home"></i> Home
+                            </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Legend -->
-                <div class="flow-legend">
-                    <div class="flow-legend-item">
-                        <div class="flow-legend-icon" style="background: var(--success-color); border-radius: 50%;"></div>
-                        <div class="flow-legend-text">Local Models</div>
+                <!-- Quality Controls -->
+                <div class="quality-controls">
+                    <button class="quality-btn" id="quality-low" title="Low quality (better performance)">Low</button>
+                    <button class="quality-btn active" id="quality-medium" title="Medium quality">Med</button>
+                    <button class="quality-btn" id="quality-high" title="High quality (best visuals)">High</button>
+                </div>
+                
+                <!-- Export Controls -->
+                <div class="export-controls">
+                    <button class="export-btn" id="capture-screenshot" title="Capture screenshot">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                    <button class="export-btn" id="start-recording" title="Start/stop video recording">
+                        <i class="fas fa-video"></i>
+                    </button>
+                </div>
+                
+                <!-- 3D Info Panel -->
+                <div class="workflow-3d-info glass-panel">
+                    <div class="info-header">
+                        <div class="info-title">HETROFL 3D Workflow</div>
+                        <div class="info-subtitle">
+                            Interactive 3D visualization of heterogeneous federated learning with real-time model communication.
+                        </div>
                     </div>
-                    <div class="flow-legend-item">
-                        <div class="flow-legend-icon" style="background: var(--primary-color); border-radius: 50%;"></div>
-                        <div class="flow-legend-text">Global Model</div>
+                    
+                    <div class="info-content">
+                        <ul class="workflow-steps">
+                            <li class="workflow-step" id="step-1">
+                                <div class="step-number">1</div>
+                                <div class="step-text">Local model training on distributed datasets</div>
+                            </li>
+                            <li class="workflow-step" id="step-2">
+                                <div class="step-number">2</div>
+                                <div class="step-text">Parameter extraction and secure encoding</div>
+                            </li>
+                            <li class="workflow-step" id="step-3">
+                                <div class="step-number">3</div>
+                                <div class="step-text">Federated aggregation of model updates</div>
+                            </li>
+                            <li class="workflow-step" id="step-4">
+                                <div class="step-number">4</div>
+                                <div class="step-text">Global model optimization and validation</div>
+                            </li>
+                            <li class="workflow-step" id="step-5">
+                                <div class="step-number">5</div>
+                                <div class="step-text">Updated model distribution to clients</div>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="flow-legend-item">
-                        <div class="flow-legend-icon" style="background: var(--warning-color); border-radius: 50%;"></div>
-                        <div class="flow-legend-text">Data Flow</div>
+                </div>
+                
+                <!-- 3D Legend -->
+                <div class="workflow-3d-legend glass-panel">
+                    <div class="legend-content">
+                        <div class="control-group-title">Node Types</div>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <div class="legend-icon data"></div>
+                                <div class="legend-text">Data Sources</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon local"></div>
+                                <div class="legend-text">Local Models</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon aggregation"></div>
+                                <div class="legend-text">Aggregation</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon global"></div>
+                                <div class="legend-text">Global Model</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-icon evaluation"></div>
+                                <div class="legend-text">Evaluation</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flow-legend-item">
-                        <div class="flow-legend-icon" style="height: 2px; background: var(--primary-color);"></div>
-                        <div class="flow-legend-text">Communication</div>
+                </div>
+                
+                <!-- Performance Stats -->
+                <div class="performance-stats glass-panel-enhanced">
+                    <div class="stats-content">
+                        <div class="control-group-title">Performance</div>
+                        <div class="stat-item">
+                            <span class="stat-label">FPS:</span>
+                            <span class="stat-value good" id="fps-counter">60</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Nodes:</span>
+                            <span class="stat-value" id="node-counter">9</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Particles:</span>
+                            <span class="stat-value" id="particle-counter">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Quality:</span>
+                            <span class="stat-value" id="quality-indicator">Medium</span>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Flow stages - Local Models -->
-                <div class="flow-stage local-model" id="local-model-1" style="top: 20%; left: 20%;">
-                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
-                    <div class="flow-stage-title">XGBoost</div>
-                    <div class="flow-stage-description">Gradient boosting local model</div>
+                <!-- Workflow Progress -->
+                <div class="workflow-progress">
+                    <div class="progress-bar" id="workflow-progress-bar"></div>
                 </div>
                 
-                <div class="flow-stage local-model" id="local-model-2" style="top: 50%; left: 20%;">
-                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
-                    <div class="flow-stage-title">Random Forest</div>
-                    <div class="flow-stage-description">Ensemble decision trees model</div>
-                </div>
-                
-                <div class="flow-stage local-model" id="local-model-3" style="top: 80%; left: 20%;">
-                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
-                    <div class="flow-stage-title">CatBoost</div>
-                    <div class="flow-stage-description">Categorical boosting model</div>
-                </div>
-                
-                <!-- Flow stages - Data Sources -->
-                <div class="flow-stage data" id="data-source-1" style="top: 20%; left: 5%;">
-                    <i class="fas fa-database flow-stage-icon text-warning"></i>
-                    <div class="flow-stage-title">Dataset A</div>
-                    <div class="flow-stage-description">Local training data</div>
-                </div>
-                
-                <div class="flow-stage data" id="data-source-2" style="top: 50%; left: 5%;">
-                    <i class="fas fa-database flow-stage-icon text-warning"></i>
-                    <div class="flow-stage-title">Dataset B</div>
-                    <div class="flow-stage-description">Local training data</div>
-                </div>
-                
-                <div class="flow-stage data" id="data-source-3" style="top: 80%; left: 5%;">
-                    <i class="fas fa-database flow-stage-icon text-warning"></i>
-                    <div class="flow-stage-title">Dataset C</div>
-                    <div class="flow-stage-description">Local training data</div>
-                </div>
-                
-                <!-- Flow stages - Aggregation -->
-                <div class="flow-stage" id="aggregation" style="top: 50%; left: 50%;">
-                    <i class="fas fa-code-branch flow-stage-icon text-info"></i>
-                    <div class="flow-stage-title">Aggregation</div>
-                    <div class="flow-stage-description">Secure model update aggregation</div>
-                </div>
-                
-                <!-- Flow stages - Global Model -->
-                <div class="flow-stage global-model" id="global-model" style="top: 50%; left: 80%;">
-                    <i class="fas fa-globe flow-stage-icon text-primary"></i>
-                    <div class="flow-stage-title">Global Model</div>
-                    <div class="flow-stage-description">Neural network ensemble model</div>
-                </div>
-                
-                <!-- Flow stages - Evaluation -->
-                <div class="flow-stage" id="evaluation" style="top: 20%; left: 80%;">
-                    <i class="fas fa-chart-line flow-stage-icon text-danger"></i>
-                    <div class="flow-stage-title">Evaluation</div>
-                    <div class="flow-stage-description">Performance assessment</div>
-                </div>
-                
-                <!-- Flow Arrows - Initial setup, will be dynamically adjusted -->
-                <!-- Data to Local Models -->
-                <div class="flow-arrow" id="arrow-data-1-local-1"></div>
-                <div class="flow-arrow" id="arrow-data-2-local-2"></div>
-                <div class="flow-arrow" id="arrow-data-3-local-3"></div>
-                
-                <!-- Local Models to Aggregation -->
-                <div class="flow-arrow" id="arrow-local-1-aggregation"></div>
-                <div class="flow-arrow" id="arrow-local-2-aggregation"></div>
-                <div class="flow-arrow" id="arrow-local-3-aggregation"></div>
-                
-                <!-- Aggregation to Global Model -->
-                <div class="flow-arrow" id="arrow-aggregation-global"></div>
-                
-                <!-- Global Model to Evaluation -->
-                <div class="flow-arrow" id="arrow-global-evaluation"></div>
-                
-                <!-- Global Model back to Local Models -->
-                <div class="flow-arrow" id="arrow-global-local-1"></div>
-                <div class="flow-arrow" id="arrow-global-local-2"></div>
-                <div class="flow-arrow" id="arrow-global-local-3"></div>
+                <!-- Tooltip Container -->
+                <div class="tooltip-3d" id="tooltip-3d"></div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- 3D Workflow JavaScript -->
+<script src="{{ url_for('static', filename='js/workflow-3d.js') }}"></script>
+
 <script>
-// Global variables
-let animationSpeed = 1;
-let animationRunning = false;
-let currentStep = 0;
-let animationInterval = null;
-
-// Element references
-const flowDiagram = document.getElementById('flow-diagram');
-const startButton = document.getElementById('start-animation-btn');
-const resetButton = document.getElementById('reset-animation-btn');
-const speedButtons = document.querySelectorAll('.flow-control-btn');
-const infoSteps = document.querySelectorAll('.flow-info-step');
-
-// Flow stages
-const stages = {
-    dataSources: [
-        document.getElementById('data-source-1'),
-        document.getElementById('data-source-2'),
-        document.getElementById('data-source-3')
-    ],
-    localModels: [
-        document.getElementById('local-model-1'),
-        document.getElementById('local-model-2'),
-        document.getElementById('local-model-3')
-    ],
-    aggregation: document.getElementById('aggregation'),
-    globalModel: document.getElementById('global-model'),
-    evaluation: document.getElementById('evaluation')
-};
-
-// Flow arrows
-const arrows = {
-    dataToLocal: [
-        document.getElementById('arrow-data-1-local-1'),
-        document.getElementById('arrow-data-2-local-2'),
-        document.getElementById('arrow-data-3-local-3')
-    ],
-    localToAggregation: [
-        document.getElementById('arrow-local-1-aggregation'),
-        document.getElementById('arrow-local-2-aggregation'),
-        document.getElementById('arrow-local-3-aggregation')
-    ],
-    aggregationToGlobal: document.getElementById('arrow-aggregation-global'),
-    globalToEvaluation: document.getElementById('arrow-global-evaluation'),
-    globalToLocal: [
-        document.getElementById('arrow-global-local-1'),
-        document.getElementById('arrow-global-local-2'),
-        document.getElementById('arrow-global-local-3')
-    ]
-};
-
-// Initialize on page load
+// 3D Workflow Integration
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize arrow positions
-    positionArrows();
+    // Control button event listeners
+    const startBtn = document.getElementById('start-3d-animation');
+    const pauseBtn = document.getElementById('pause-3d-animation');
+    const resetBtn = document.getElementById('reset-3d-animation');
+    const speedSlider = document.getElementById('speed-slider');
     
-    // Setup event listeners
-    setupEventListeners();
+    // Legacy button integration
+    const legacyStartBtn = document.getElementById('start-animation-btn');
+    const legacyResetBtn = document.getElementById('reset-animation-btn');
     
-    // Initialize stages (show only data sources initially)
-    initializeStages();
+    // 3D Control handlers
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.startWorkflowAnimation();
+                this.classList.add('active');
+                pauseBtn.classList.remove('active');
+            }
+        });
+    }
     
-    // Resize handler
-    window.addEventListener('resize', positionArrows);
-});
-
-// Setup event listeners
-function setupEventListeners() {
-    // Start animation button
-    startButton.addEventListener('click', function() {
-        if (animationRunning) {
-            pauseAnimation();
-            startButton.innerHTML = '<i class="fas fa-play me-2"></i>Resume Animation';
-        } else {
-            startAnimation();
-            startButton.innerHTML = '<i class="fas fa-pause me-2"></i>Pause Animation';
-        }
-    });
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.pauseAnimation();
+                this.classList.add('active');
+                startBtn.classList.remove('active');
+            }
+        });
+    }
     
-    // Reset animation button
-    resetButton.addEventListener('click', resetAnimation);
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.resetWorkflow();
+                startBtn.classList.remove('active');
+                pauseBtn.classList.remove('active');
+            }
+        });
+    }
     
-    // Speed control buttons
-    speedButtons.forEach(button => {
+    if (speedSlider) {
+        speedSlider.addEventListener('input', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.setAnimationSpeed(parseFloat(this.value));
+            }
+        });
+    }
+    
+    // Legacy button integration
+    if (legacyStartBtn) {
+        legacyStartBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.startWorkflowAnimation();
+                startBtn.classList.add('active');
+                pauseBtn.classList.remove('active');
+            }
+        });
+    }
+    
+    if (legacyResetBtn) {
+        legacyResetBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.resetWorkflow();
+                startBtn.classList.remove('active');
+                pauseBtn.classList.remove('active');
+            }
+        });
+    }
+    
+    // View control handlers
+    const viewButtons = document.querySelectorAll('[id^="view-"]');
+    viewButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Update active state
-            speedButtons.forEach(btn => btn.classList.remove('active'));
+            viewButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             
-            // Update animation speed
-            animationSpeed = parseFloat(this.dataset.speed);
+            const viewType = this.id.replace('view-', '');
+            if (window.hetrofl3D) {
+                window.hetrofl3D.setCameraView(viewType);
+            }
         });
     });
-}
-
-// Position arrows between elements
-function positionArrows() {
-    // Helper function to position arrow between two elements
-    function positionArrow(arrow, fromElement, toElement) {
-        const fromRect = fromElement.getBoundingClientRect();
-        const toRect = toElement.getBoundingClientRect();
-        const containerRect = flowDiagram.getBoundingClientRect();
-        
-        // Calculate center points relative to container
-        const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
-        const fromY = fromRect.top + fromRect.height / 2 - containerRect.top;
-        const toX = toRect.left + toRect.width / 2 - containerRect.left;
-        const toY = toRect.top + toRect.height / 2 - containerRect.top;
-        
-        // Calculate distance and angle
-        const dx = toX - fromX;
-        const dy = toY - fromY;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        // Set arrow position and rotation
-        arrow.style.left = `${fromX}px`;
-        arrow.style.top = `${fromY}px`;
-        arrow.style.width = `${length}px`;
-        arrow.style.transform = `rotate(${angle}deg)`;
-    }
     
-    // Position data to local model arrows
-    for (let i = 0; i < 3; i++) {
-        positionArrow(arrows.dataToLocal[i], stages.dataSources[i], stages.localModels[i]);
-    }
-    
-    // Position local model to aggregation arrows
-    for (let i = 0; i < 3; i++) {
-        positionArrow(arrows.localToAggregation[i], stages.localModels[i], stages.aggregation);
-    }
-    
-    // Position aggregation to global model arrow
-    positionArrow(arrows.aggregationToGlobal, stages.aggregation, stages.globalModel);
-    
-    // Position global model to evaluation arrow
-    positionArrow(arrows.globalToEvaluation, stages.globalModel, stages.evaluation);
-    
-    // Position global model back to local models arrows
-    for (let i = 0; i < 3; i++) {
-        positionArrow(arrows.globalToLocal[i], stages.globalModel, stages.localModels[i]);
-    }
-}
-
-// Initialize stages
-function initializeStages() {
-    // Show only data sources initially
-    stages.dataSources.forEach(stage => {
-        stage.classList.add('active');
+    // Quality control handlers
+    const qualityButtons = document.querySelectorAll('[id^="quality-"]');
+    qualityButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            qualityButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const quality = this.id.replace('quality-', '');
+            if (window.hetrofl3D) {
+                window.hetrofl3D.setQualityLevel(quality);
+            }
+            
+            // Update quality indicator
+            const qualityIndicator = document.getElementById('quality-indicator');
+            if (qualityIndicator) {
+                qualityIndicator.textContent = quality.charAt(0).toUpperCase() + quality.slice(1);
+            }
+        });
     });
     
-    // Hide all other stages
-    stages.localModels.forEach(stage => {
-        stage.classList.remove('active');
-    });
-    stages.aggregation.classList.remove('active');
-    stages.globalModel.classList.remove('active');
-    stages.evaluation.classList.remove('active');
-}
-
-// Start animation
-function startAnimation() {
-    if (animationRunning) return;
+    // Export control handlers
+    const screenshotBtn = document.getElementById('capture-screenshot');
+    const recordingBtn = document.getElementById('start-recording');
+    let isRecording = false;
     
-    animationRunning = true;
-    
-    // If animation was reset, start from beginning
-    if (currentStep === 0) {
-        resetAnimation(false);
-    }
-    
-    // Start the animation sequence
-    animationInterval = setInterval(animationStep, 3000 * animationSpeed);
-}
-
-// Pause animation
-function pauseAnimation() {
-    if (!animationRunning) return;
-    
-    animationRunning = false;
-    clearInterval(animationInterval);
-}
-
-// Reset animation
-function resetAnimation(fullReset = true) {
-    // Stop current animation
-    pauseAnimation();
-    
-    if (fullReset) {
-        // Reset button text
-        startButton.innerHTML = '<i class="fas fa-play me-2"></i>Start Animation';
-    }
-    
-    // Reset step counter
-    currentStep = 0;
-    
-    // Remove all active classes
-    document.querySelectorAll('.flow-stage').forEach(stage => {
-        stage.classList.remove('active');
-    });
-    
-    document.querySelectorAll('.flow-arrow').forEach(arrow => {
-        arrow.classList.remove('active');
-    });
-    
-    // Remove any data packets
-    document.querySelectorAll('.data-packet').forEach(packet => {
-        packet.remove();
-    });
-    
-    // Reset info steps
-    infoSteps.forEach(step => {
-        step.classList.remove('active');
-    });
-    
-    // Initialize stages again
-    initializeStages();
-}
-
-// Animation step
-function animationStep() {
-    // Remove active class from all info steps
-    infoSteps.forEach(step => step.classList.remove('active'));
-    
-    // Add active class to current step
-    if (currentStep < infoSteps.length) {
-        infoSteps[currentStep].classList.add('active');
-    }
-    
-    switch (currentStep) {
-        case 0: // Data to Local Models
-            // Activate local models
-            stages.localModels.forEach(model => model.classList.add('active'));
-            
-            // Activate data arrows
-            arrows.dataToLocal.forEach(arrow => arrow.classList.add('active'));
-            
-            // Animate data packets
-            arrows.dataToLocal.forEach(arrow => {
-                animateDataPacket(arrow);
-            });
-            break;
-            
-        case 1: // Local Models to Aggregation
-            // Activate aggregation
-            stages.aggregation.classList.add('active');
-            
-            // Activate local to aggregation arrows
-            arrows.localToAggregation.forEach(arrow => arrow.classList.add('active'));
-            
-            // Animate data packets
-            arrows.localToAggregation.forEach(arrow => {
-                animateDataPacket(arrow);
-            });
-            break;
-            
-        case 2: // Aggregation to Global Model
-            // Activate global model
-            stages.globalModel.classList.add('active');
-            
-            // Activate aggregation to global arrow
-            arrows.aggregationToGlobal.classList.add('active');
-            
-            // Animate data packet
-            animateDataPacket(arrows.aggregationToGlobal);
-            break;
-            
-        case 3: // Global Model to Evaluation
-            // Activate evaluation
-            stages.evaluation.classList.add('active');
-            
-            // Activate global to evaluation arrow
-            arrows.globalToEvaluation.classList.add('active');
-            
-            // Animate data packet
-            animateDataPacket(arrows.globalToEvaluation);
-            break;
-            
-        case 4: // Global Model back to Local Models
-            // Activate global to local arrows
-            arrows.globalToLocal.forEach(arrow => arrow.classList.add('active'));
-            
-            // Animate data packets
-            arrows.globalToLocal.forEach(arrow => {
-                animateDataPacket(arrow);
-            });
-            break;
-            
-        case 5: // Complete cycle - reset for next round
-            setTimeout(() => {
-                // Fade out all arrows
-                document.querySelectorAll('.flow-arrow').forEach(arrow => {
-                    arrow.classList.remove('active');
-                });
+    if (screenshotBtn) {
+        screenshotBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.captureScreenshot();
                 
-                // Keep all stages active
-            }, 1500);
-            
-            // Reset to step 1 after delay
-            setTimeout(() => {
-                currentStep = 0;
-                animationStep();
-            }, 3000 * animationSpeed);
-            
-            // Return to prevent currentStep increment
-            return;
+                // Visual feedback
+                this.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            }
+        });
     }
     
-    // Increment step counter
-    currentStep++;
-}
-
-// Animate data packet along an arrow
-function animateDataPacket(arrow) {
-    // Create a data packet
-    const packet = document.createElement('div');
-    packet.className = 'data-packet';
-    flowDiagram.appendChild(packet);
+    if (recordingBtn) {
+        recordingBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                if (!isRecording) {
+                    window.hetrofl3D.startVideoCapture();
+                    this.classList.add('recording');
+                    this.title = 'Stop recording';
+                    isRecording = true;
+                } else {
+                    window.hetrofl3D.stopVideoCapture();
+                    this.classList.remove('recording');
+                    this.title = 'Start video recording';
+                    isRecording = false;
+                }
+            }
+        });
+    }
     
-    // Get arrow dimensions and position
-    const arrowRect = arrow.getBoundingClientRect();
-    const containerRect = flowDiagram.getBoundingClientRect();
+    // Effect toggle handlers
+    const particleToggle = document.getElementById('toggle-particles');
+    const glowToggle = document.getElementById('toggle-glow');
+    const fogToggle = document.getElementById('toggle-fog');
+    const shadowToggle = document.getElementById('toggle-shadows');
     
-    // Calculate start position (relative to container)
-    const startX = arrowRect.left - containerRect.left;
-    const startY = arrowRect.top - containerRect.top;
+    if (particleToggle) {
+        particleToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const isActive = this.classList.contains('active');
+            this.setAttribute('aria-pressed', isActive);
+            
+            if (window.hetrofl3D) {
+                window.hetrofl3D.settingsManager.set('particles', isActive);
+                if (window.hetrofl3D.particleSystem) {
+                    window.hetrofl3D.particleSystem.enabled = isActive;
+                }
+            }
+        });
+    }
     
-    // Set initial position
-    packet.style.left = `${startX}px`;
-    packet.style.top = `${startY}px`;
+    if (glowToggle) {
+        glowToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const isActive = this.classList.contains('active');
+            this.setAttribute('aria-pressed', isActive);
+            
+            if (window.hetrofl3D) {
+                window.hetrofl3D.settingsManager.set('glow', isActive);
+                // Apply glow setting
+                Object.values(window.hetrofl3D.nodes).forEach(nodeArray => {
+                    nodeArray.forEach(node => {
+                        if (node.children[1]) { // Glow mesh
+                            node.children[1].visible = isActive;
+                        }
+                    });
+                });
+            }
+        });
+    }
     
-    // Get arrow angle
-    const transformStyle = window.getComputedStyle(arrow).getPropertyValue('transform');
-    const matrix = new DOMMatrix(transformStyle);
-    const angle = Math.atan2(matrix.b, matrix.a);
+    if (fogToggle) {
+        fogToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const isActive = this.classList.contains('active');
+            this.setAttribute('aria-pressed', isActive);
+            
+            if (window.hetrofl3D) {
+                window.hetrofl3D.settingsManager.set('fog', isActive);
+                if (window.hetrofl3D.scene) {
+                    window.hetrofl3D.scene.fog = isActive ? 
+                        new THREE.Fog(0x06090f, 10, 100) : null;
+                }
+            }
+        });
+    }
     
-    // Calculate end position
-    const length = arrow.offsetWidth;
-    const endX = startX + Math.cos(angle) * length;
-    const endY = startY + Math.sin(angle) * length;
+    if (shadowToggle) {
+        shadowToggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const isActive = this.classList.contains('active');
+            this.setAttribute('aria-pressed', isActive);
+            
+            if (window.hetrofl3D) {
+                window.hetrofl3D.settingsManager.set('shadows', isActive);
+                if (window.hetrofl3D.renderer) {
+                    window.hetrofl3D.renderer.shadowMap.enabled = isActive;
+                }
+            }
+        });
+    }
     
-    // Show packet
-    packet.style.opacity = '1';
+    // Tool handlers
+    const helpBtn = document.getElementById('show-help');
+    const fullscreenBtn = document.getElementById('toggle-fullscreen');
+    const resetCameraBtn = document.getElementById('reset-camera');
     
-    // Animate packet along arrow
-    const animationDuration = 1500 * animationSpeed;
-    const startTime = performance.now();
+    if (helpBtn) {
+        helpBtn.addEventListener('click', function() {
+            if (window.hetrofl3D && window.hetrofl3D.helpSystem) {
+                window.hetrofl3D.helpSystem.show();
+            }
+        });
+    }
     
-    function animatePacket(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / animationDuration, 1);
-        
-        const currentX = startX + (endX - startX) * progress;
-        const currentY = startY + (endY - startY) * progress;
-        
-        packet.style.left = `${currentX}px`;
-        packet.style.top = `${currentY}px`;
-        
-        if (progress < 1) {
-            requestAnimationFrame(animatePacket);
-        } else {
-            // Animation complete - remove packet
-            setTimeout(() => {
-                packet.remove();
-            }, 200);
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.toggleFullscreen();
+            }
+        });
+    }
+    
+    if (resetCameraBtn) {
+        resetCameraBtn.addEventListener('click', function() {
+            if (window.hetrofl3D) {
+                window.hetrofl3D.resetCamera();
+            }
+        });
+    }
+    
+    // Quality dropdown handlers
+    const qualityDropdownItems = document.querySelectorAll('[data-quality]');
+    qualityDropdownItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const quality = this.getAttribute('data-quality');
+            
+            if (window.hetrofl3D) {
+                window.hetrofl3D.setQuality(quality);
+            }
+            
+            // Update dropdown text
+            const dropdownButton = document.querySelector('[data-bs-toggle="dropdown"]');
+            if (dropdownButton) {
+                dropdownButton.innerHTML = `<i class="fas fa-cog me-2"></i>${quality.charAt(0).toUpperCase() + quality.slice(1)}`;
+            }
+        });
+    });
+    
+    // Help button in header
+    const headerHelpBtn = document.getElementById('help-btn');
+    if (headerHelpBtn) {
+        headerHelpBtn.addEventListener('click', function() {
+            if (window.hetrofl3D && window.hetrofl3D.helpSystem) {
+                window.hetrofl3D.helpSystem.show();
+            }
+        });
+    }
+    
+    // Performance monitoring
+    function updatePerformanceStats() {
+        if (window.hetrofl3D) {
+            const fpsCounter = document.getElementById('fps-counter');
+            const nodeCounter = document.getElementById('node-counter');
+            const particleCounter = document.getElementById('particle-counter');
+            
+            if (fpsCounter) {
+                const fps = window.hetrofl3D.fps || 60;
+                fpsCounter.textContent = fps;
+                fpsCounter.className = 'stat-value ' + 
+                    (fps >= 50 ? 'good' : fps >= 30 ? 'warning' : 'danger');
+            }
+            
+            if (nodeCounter) {
+                const nodeCount = Object.values(window.hetrofl3D.nodes || {})
+                    .reduce((total, arr) => total + arr.length, 0);
+                nodeCounter.textContent = nodeCount;
+            }
+            
+            if (particleCounter) {
+                const dataParticles = window.hetrofl3D.dataParticles ? window.hetrofl3D.dataParticles.length : 0;
+                const systemParticles = (window.hetrofl3D.particleSystem && window.hetrofl3D.particleSystem.particles) ? 
+                                       window.hetrofl3D.particleSystem.particles.length : 0;
+                const totalParticles = dataParticles + systemParticles;
+                particleCounter.textContent = totalParticles;
+            }
         }
     }
     
-    requestAnimationFrame(animatePacket);
-}
+    // Workflow progress tracking
+    function updateWorkflowProgress() {
+        if (window.hetrofl3D && window.hetrofl3D.isAnimating) {
+            const progressBar = document.getElementById('workflow-progress-bar');
+            if (progressBar) {
+                const totalSteps = window.hetrofl3D.workflowSteps ? window.hetrofl3D.workflowSteps.length : 7;
+                const currentStep = window.hetrofl3D.currentStep || 0;
+                const progress = (currentStep / totalSteps) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+        }
+    }
+    
+    // Tooltip system
+    function setupTooltips() {
+        const tooltip = document.getElementById('tooltip-3d');
+        if (!tooltip) return;
+        
+        // Add tooltips to all control buttons
+        document.querySelectorAll('[title]').forEach(element => {
+            element.addEventListener('mouseenter', function(e) {
+                const title = this.getAttribute('title');
+                if (title) {
+                    tooltip.textContent = title;
+                    tooltip.classList.add('visible');
+                    
+                    const rect = this.getBoundingClientRect();
+                    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                    tooltip.style.top = `${rect.top - 40}px`;
+                }
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                tooltip.classList.remove('visible');
+            });
+        });
+    }
+    
+    // Accessibility enhancements
+    function setupAccessibility() {
+        if (window.hetrofl3D) {
+            window.hetrofl3D.enableKeyboardNavigation();
+        }
+        
+        // Add ARIA labels
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            if (!btn.getAttribute('aria-label')) {
+                btn.setAttribute('aria-label', btn.textContent.trim() || btn.title);
+            }
+        });
+        
+        // Add role attributes
+        document.querySelector('.workflow-3d-container').setAttribute('role', 'application');
+        document.querySelector('.workflow-3d-container').setAttribute('aria-label', 'HETROFL 3D Workflow Visualization');
+    }
+    
+    // Initialize all features
+    setupTooltips();
+    setupAccessibility();
+    
+    // Update stats and progress regularly
+    setInterval(updatePerformanceStats, 1000);
+    setInterval(updateWorkflowProgress, 100);
+    
+    // Keyboard shortcuts help
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F1') {
+            e.preventDefault();
+            alert(`HETROFL 3D Workflow Keyboard Shortcuts:
+            
+Space - Start/Pause animation
+R - Reset workflow
+1-4 - Camera views (Perspective, Top, Side, Overview)
+Tab - Navigate between nodes
+Enter - Select focused node
+Arrow keys - Navigate nodes
+Escape - Deselect node
+F1 - Show this help`);
+        }
+    });
+    
+    console.log('Advanced 3D Workflow controls initialized');
+    console.log('Press F1 for keyboard shortcuts help');
+});
 </script>
-{% endblock %} 
+{% endblock %}

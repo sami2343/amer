@@ -918,6 +918,97 @@ def handle_update_request():
     except Exception as e:
         emit('error', {'message': str(e)})
 
+@app.route('/api/workflow-status')
+def get_workflow_status():
+    """Get real-time workflow status for 3D visualization."""
+    global state_manager, federated_coordinator, metrics_tracker
+    
+    try:
+        # Get current training status
+        training_status = {
+            'global_model': [{
+                'status': 'training' if state_manager and state_manager.is_training() else 'idle',
+                'progress': state_manager.get_training_progress() if state_manager else 0,
+                'accuracy': 0.0,
+                'loss': 0.0
+            }],
+            'local_models': []
+        }
+        
+        # Add local model statuses
+        for i, model_name in enumerate(LOCAL_MODELS.keys()):
+            model_status = {
+                'status': 'idle',
+                'progress': 0,
+                'accuracy': 0.0,
+                'loss': 0.0,
+                'model_type': model_name
+            }
+            
+            # Get latest metrics if available
+            if metrics_tracker:
+                try:
+                    latest_df = metrics_tracker.get_metrics_dataframe(model_name)
+                    if not latest_df.empty:
+                        latest_row = latest_df.iloc[-1]
+                        model_status['accuracy'] = float(latest_row.get('accuracy', 0.0))
+                        model_status['loss'] = float(latest_row.get('loss', 0.0))
+                        model_status['status'] = 'complete' if model_status['accuracy'] > 0 else 'idle'
+                except Exception as e:
+                    logger.warning(f"Error getting status for {model_name}: {e}")
+            
+            training_status['local_models'].append(model_status)
+        
+        # Get aggregated metrics
+        metrics = {}
+        if metrics_tracker:
+            try:
+                global_df = metrics_tracker.get_metrics_dataframe()
+                if not global_df.empty:
+                    latest_global = global_df.iloc[-1]
+                    metrics = {
+                        'global_accuracy': float(latest_global.get('accuracy', 0.0)),
+                        'global_loss': float(latest_global.get('loss', 0.0)),
+                        'training_time': float(latest_global.get('training_time', 0.0)),
+                        'round': len(global_df)
+                    }
+                    
+                    # Update global model status
+                    training_status['global_model'][0]['accuracy'] = metrics['global_accuracy']
+                    training_status['global_model'][0]['loss'] = metrics['global_loss']
+                    if metrics['global_accuracy'] > 0:
+                        training_status['global_model'][0]['status'] = 'complete'
+            except Exception as e:
+                logger.warning(f"Error getting global metrics: {e}")
+        
+        # Get data flow information
+        data_flow = {
+            'active_connections': len(training_status['local_models']),
+            'data_packets': 0,
+            'bandwidth_usage': 0.0
+        }
+        
+        # Simulate some data flow activity if training
+        if state_manager and state_manager.is_training():
+            import random
+            data_flow['data_packets'] = random.randint(10, 50)
+            data_flow['bandwidth_usage'] = random.uniform(0.1, 1.0)
+        
+        return jsonify({
+            'training_status': training_status,
+            'metrics': metrics,
+            'data_flow': data_flow,
+            'timestamp': datetime.now().isoformat(),
+            'system_status': 'active' if state_manager and state_manager.is_training() else 'idle'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting workflow status: {e}")
+        return jsonify({
+            'error': 'Failed to get workflow status',
+            'details': str(e)
+        }), 500
+
 def background_updates():
     """Send periodic updates to connected clients."""
     while True:
