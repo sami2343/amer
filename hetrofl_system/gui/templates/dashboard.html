@@ -1,0 +1,1322 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HETROFL System{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS for map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    /* Enhanced chart styles */
+    #performance-chart {
+        height: 400px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    /* Map styles */
+    .dashboard-map {
+        height: 300px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    #dashboard-device-map {
+        height: 100%;
+        width: 100%;
+    }
+    
+    /* Card shadows */
+    .dashboard-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        transform: translateY(-5px);
+    }
+    
+    /* Progress indicators */
+    .progress-ring {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        background: conic-gradient(
+            var(--primary-color) 0%, 
+            var(--primary-light) 30%, 
+            rgba(255, 255, 255, 0.2) 30%
+        );
+    }
+    
+    .progress-ring::before {
+        content: '';
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--card-bg);
+    }
+    
+    .progress-ring-value {
+        position: relative;
+        z-index: 2;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    
+    /* Chart text styles */
+    .plotly .gtitle {
+        fill: var(--text-color) !important;
+    }
+    
+    .plotly .xtitle, .plotly .ytitle {
+        fill: var(--text-muted) !important;
+    }
+    
+    .plotly .xtick text, .plotly .ytick text {
+        fill: var(--text-muted) !important;
+    }
+    
+    /* Activity log styles */
+    #activity-log .text-muted {
+        color: var(--text-muted) !important;
+    }
+    
+    /* Table contrast enhancement */
+    .table-hover tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.1);
+    }
+    
+    /* Ensure metric cards have contrasting text */
+    .metric-card {
+        position: relative;
+    }
+    
+    .metric-card .metric-value,
+    .metric-card .metric-label,
+    .metric-card small {
+        color: var(--text-color) !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="alert-container"></div>
+
+<div class="row mt-3">
+    <!-- System Overview -->
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    System Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Global Model Status -->
+                    <div class="col-md-3">
+                        <div class="metric-card" style="background: var(--gradient-primary);">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="metric-value" id="global-accuracy">--</div>
+                                    <div class="metric-label">Global Model Accuracy</div>
+                                </div>
+                                <div class="metric-icon">
+                                    <i class="fas fa-brain fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div id="accuracy-sparkline" style="height: 40px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Training Progress -->
+                    <div class="col-md-3">
+                        <div class="metric-card" style="background: var(--gradient-secondary);">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="metric-value" id="training-round">--</div>
+                                    <div class="metric-label">Current Round</div>
+                                </div>
+                                <div class="metric-icon">
+                                    <i class="fas fa-sync-alt fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-white" id="round-progress" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Local Models -->
+                    <div class="col-md-3">
+                        <div class="metric-card" style="background: var(--gradient-success);">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="metric-value" id="local-models-count">--</div>
+                                    <div class="metric-label">Local Models</div>
+                                </div>
+                                <div class="metric-icon">
+                                    <i class="fas fa-network-wired fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <small class="opacity-75">Active: <span id="active-models">0</span></small>
+                                    <small class="opacity-75">Ready: <span id="ready-models">0</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Status -->
+                    <div class="col-md-3">
+                        <div class="metric-card" style="background: var(--gradient-info);">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="metric-value" id="system-uptime">--</div>
+                                    <div class="metric-label">System Status</div>
+                                </div>
+                                <div class="metric-icon">
+                                    <i class="fas fa-server fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-indicator me-2" id="dashboard-status"></span>
+                                    <small class="opacity-75" id="status-detail">Initializing...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Quick Stats -->
+    <div class="col-lg-12">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <h4 class="text-primary" id="total-rounds">0</h4>
+                        <small class="text-muted">Total Rounds</small>
+                    </div>
+                    <div class="col-3">
+                        <h4 class="text-success" id="best-accuracy">0%</h4>
+                        <small class="text-muted">Best Accuracy</small>
+                    </div>
+                    <div class="col-3">
+                        <h4 class="text-warning" id="avg-round-time">0s</h4>
+                        <small class="text-muted">Avg Round Time</small>
+                    </div>
+                    <div class="col-3">
+                        <h4 class="text-info" id="improvement">0%</h4>
+                        <small class="text-muted">Improvement</small>
+                    </div>
+                </div>
+                
+                <!-- Training button -->
+                <div class="d-grid gap-2 mt-4">
+                    <a href="/training" class="btn btn-primary">
+                        <i class="fas fa-cogs me-2"></i>Training Controls
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Model Comparison -->
+    <div class="col-lg-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-balance-scale me-2"></i>
+                    Model Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="comparison-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- IoT Device Map -->
+    <div class="col-lg-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    IoT Device Locations
+                </h5>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="refreshDashboardMap()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="dashboard-map">
+                    <div id="dashboard-device-map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Activity -->
+    <div class="col-lg-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Activity
+                </h5>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="clearActivityLog()">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="activity-log" style="height: 300px; overflow-y: auto;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <p>No recent activity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Device Status Summary -->
+    <div class="col-lg-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-network-wired me-2"></i>
+                    Device Status Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="device-status-summary" style="height: 300px; overflow-y: auto;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-server fa-2x mb-2"></i>
+                        <p>Loading device status...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Local Models Status -->
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-brain me-2"></i>
+                    Local Models Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Accuracy</th>
+                                <th>F1 Score</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="models-table-body">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Loading models...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JavaScript for map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Dashboard-specific variables
+    let performanceChart = null;
+    let comparisonChart = null;
+    let activityLog = [];
+    let metricsHistory = {global: [], local: {}};
+    let dashboardMap = null;
+    let deviceMarkers = {};
+    let latestMetricsData = null;
+    
+    // Device location data with real coordinates
+    const deviceData = {
+        'xgboost': {
+            name: 'XGBoost Model',
+            description: 'Electric Vehicle Charging Station Controller',
+            coordinates: [32.53359909298916, 35.90928969935176],
+            type: 'xgboost',
+            color: '#4f46e5',
+            icon: 'fas fa-charging-station'
+        },
+        'random_forest': {
+            name: 'Random Forest Model', 
+            description: 'Industrial IoT Sensor Node',
+            coordinates: [31.945688192314726, 35.92097050152856],
+            type: 'random_forest',
+            color: '#10b981',
+            icon: 'fas fa-industry'
+        },
+        'catboost': {
+            name: 'CatBoost Model',
+            description: 'Smart Home Security Camera',
+            coordinates: [29.59780240678231, 35.16846793262824],
+            type: 'catboost',
+            color: '#f59e0b',
+            icon: 'fas fa-video'
+        }
+    };
+    
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial system state
+        window.systemInitialized = false;
+        window.performanceDataErrorLogged = false;
+        window.performanceChartErrorLogged = false;
+        window.systemInitMessageLogged = false;
+        window.systemInitializingMessageLogged = false;
+        window.performanceDataInitializingLogged = false;
+        window.hadPreviousPerformanceError = false;
+        
+        // Initialize charts
+        initializeCharts();
+        
+        // Initialize dashboard map
+        initializeDashboardMap();
+        
+        // Load initial data
+        loadInitialData();
+        
+        // Show welcome message in activity log
+        addActivityLogEntry('Dashboard initialized. Welcome to HETROFL System!', 'info');
+        addActivityLogEntry('Loading system data, please wait...', 'info');
+        
+        // Check system status
+        checkSystemStatus();
+        
+        // Set up periodic checks
+        setInterval(checkSystemStatus, 10000); // Check system status every 10 seconds
+    });
+    
+    // Check if system is initialized and update UI accordingly
+    function checkSystemStatus() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(status => {
+                // Update system status flag
+                window.systemInitialized = status.initialized === true;
+                
+                // If system is now initialized but wasn't before, we can load the performance data
+                if (window.systemInitialized) {
+                    // Reset error flags to allow retrying data loading
+                    window.performanceDataErrorLogged = false;
+                    window.performanceChartErrorLogged = false;
+                    
+                    // Force load metrics data
+                    fetchPerformanceData();
+                    
+                    // Add initialization message only once
+                    if (!window.systemInitMessageLogged) {
+                        addActivityLogEntry('System initialized successfully', 'success');
+                        window.systemInitMessageLogged = true;
+                    }
+                } else {
+                    // System is still initializing
+                    if (!window.systemInitializingMessageLogged) {
+                        addActivityLogEntry('System is initializing, some data may not be available yet...', 'info');
+                        window.systemInitializingMessageLogged = true;
+                    }
+                    
+                    // Still try to load performance data in case it becomes available
+                    setTimeout(fetchPerformanceData, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking system status:', error);
+                addActivityLogEntry('Error connecting to server. Please check your connection.', 'error');
+            });
+    }
+    
+    // Initialize charts with proper error handling
+    function initializeCharts() {
+        // Initialize sparkline chart
+        initializeSparkline();
+        
+        // Performance chart was removed from dashboard
+        // createSimplifiedPerformanceChart();
+        
+        // Comparison chart
+        const comparisonLayout = {
+            title: 'Model Comparison',
+            xaxis: { title: 'Models' },
+            yaxis: { title: 'Accuracy (%)' },
+            autosize: true,
+            margin: { l: 50, r: 50, t: 50, b: 50 },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' }
+        };
+        
+        const emptyBarTrace = [{
+            x: ['No Data'],
+            y: [0],
+            type: 'bar',
+            name: 'Accuracy',
+            marker: { color: '#4f46e5' }
+        }];
+        
+        Plotly.newPlot('comparison-chart', emptyBarTrace, comparisonLayout);
+    }
+    
+    // Initialize sparkline chart
+    function initializeSparkline() {
+        const sparklineData = Array.from({length: 10}, (_, i) => Math.random() * 20 + 70);
+        
+        const trace = {
+            x: Array.from({length: 10}, (_, i) => i + 1),
+            y: sparklineData,
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: 'rgba(255,255,255,0.9)', width: 2 },
+            fill: 'tonexty',
+            fillcolor: 'rgba(255,255,255,0.15)',
+            showlegend: false,
+            hoverinfo: 'none'
+        };
+        
+        const layout = {
+            margin: { l: 0, r: 0, t: 0, b: 0 },
+            xaxis: { visible: false },
+            yaxis: { visible: false },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            autosize: true
+        };
+        
+        Plotly.newPlot('accuracy-sparkline', [trace], layout, {
+            displayModeBar: false,
+            responsive: true
+        });
+    }
+    
+    // Initialize dashboard map
+    function initializeDashboardMap() {
+        try {
+            // Calculate center point of all devices
+            const centerLat = (32.53359909298916 + 31.945688192314726 + 29.59780240678231) / 3;
+            const centerLng = (35.90928969935176 + 35.92097050152856 + 35.16846793262824) / 3;
+            
+            // Create map
+            dashboardMap = L.map('dashboard-device-map').setView([centerLat, centerLng], 8);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(dashboardMap);
+            
+            // Add device markers
+            addDashboardDeviceMarkers();
+            
+            console.log('Dashboard map initialized successfully');
+        } catch (error) {
+            console.error('Error initializing dashboard map:', error);
+        }
+    }
+    
+    // Create device icon for dashboard map
+    function createDashboardDeviceIcon(device, status = 'offline', metrics = null) {
+        const statusColors = {
+            'online': '#10b981',
+            'training': '#f59e0b', 
+            'offline': '#ef4444'
+        };
+        
+        const accuracy = metrics ? (metrics.accuracy * 100).toFixed(1) : '0.0';
+        
+        const iconHtml = `
+            <div style="
+                background: ${device.color};
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                border: 2px solid ${statusColors[status]};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                position: relative;
+            ">
+                <i class="${device.icon}"></i>
+                ${status === 'training' ? '<div style="position: absolute; top: -1px; right: -1px; width: 6px; height: 6px; background: #f59e0b; border-radius: 50%; animation: pulse 2s infinite;"></div>' : ''}
+            </div>
+        `;
+        
+        return L.divIcon({
+            html: iconHtml,
+            className: 'custom-device-icon',
+            iconSize: [25, 25],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+    }
+    
+    // Add device markers to dashboard map
+    function addDashboardDeviceMarkers() {
+        Object.keys(deviceData).forEach(deviceKey => {
+            const device = deviceData[deviceKey];
+            const status = getDashboardDeviceStatus(deviceKey);
+            const metrics = getDashboardDeviceMetrics(deviceKey);
+            
+            const marker = L.marker(device.coordinates, {
+                icon: createDashboardDeviceIcon(device, status, metrics)
+            });
+            
+            // Create popup content with real metrics
+            const popupContent = createDashboardPopupContent(device, deviceKey, status, metrics);
+            marker.bindPopup(popupContent, {
+                maxWidth: 250,
+                className: 'custom-popup'
+            });
+            
+            // Store marker reference
+            deviceMarkers[deviceKey] = marker;
+            
+            // Add to map
+            marker.addTo(dashboardMap);
+        });
+        
+        // Fit map to show all markers
+        if (Object.keys(deviceMarkers).length > 0) {
+            const group = new L.featureGroup(Object.values(deviceMarkers));
+            dashboardMap.fitBounds(group.getBounds(), { padding: [10, 10] });
+        }
+    }
+    
+    // Get device status based on real system data
+    function getDashboardDeviceStatus(deviceKey) {
+        if (!latestMetricsData || !latestMetricsData.local || !latestMetricsData.local[deviceKey]) {
+            return 'offline';
+        }
+        
+        // Check if system is training
+        if (window.systemStatus && window.systemStatus.training) {
+            return 'training';
+        }
+        
+        // Check if device has recent metrics (within last 5 minutes)
+        const metrics = latestMetricsData.local[deviceKey];
+        if (metrics && metrics.timestamp) {
+            const lastUpdate = new Date(metrics.timestamp);
+            const now = new Date();
+            const timeDiff = (now - lastUpdate) / (1000 * 60); // minutes
+            
+            if (timeDiff < 5) {
+                return 'online';
+            }
+        }
+        
+        return 'offline';
+    }
+    
+    // Get device metrics from real system data
+    function getDashboardDeviceMetrics(deviceKey) {
+        if (!latestMetricsData || !latestMetricsData.local || !latestMetricsData.local[deviceKey]) {
+            return {
+                accuracy: 0,
+                f1_score: 0,
+                precision: 0,
+                recall: 0,
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        return latestMetricsData.local[deviceKey];
+    }
+    
+    // Create popup content for dashboard map
+    function createDashboardPopupContent(device, deviceKey, status, metrics) {
+        const statusBadge = status === 'online' ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">ONLINE</span>' :
+                           status === 'training' ? '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">TRAINING</span>' :
+                           '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">OFFLINE</span>';
+        
+        const accuracy = metrics ? (metrics.accuracy * 100).toFixed(1) : '0.0';
+        const f1Score = metrics ? (metrics.f1_score * 100).toFixed(1) : '0.0';
+        const lastUpdate = metrics && metrics.timestamp ? new Date(metrics.timestamp).toLocaleTimeString() : 'Never';
+        
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <div style="font-weight: 700; font-size: 1rem; color: ${device.color}; margin-bottom: 0.5rem;">
+                    <i class="${device.icon}" style="margin-right: 0.5rem;"></i>${device.name}
+                </div>
+                <div style="color: #6b7280; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                    ${device.description}
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                    ${statusBadge}
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem;">
+                    <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 0.25rem;">
+                        <div style="font-weight: 700; color: #10b981; font-size: 0.9rem;">${accuracy}%</div>
+                        <div style="font-size: 0.7rem; color: #6b7280;">ACCURACY</div>
+                    </div>
+                    <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 0.25rem;">
+                        <div style="font-weight: 700; color: #3b82f6; font-size: 0.9rem;">${f1Score}%</div>
+                        <div style="font-size: 0.7rem; color: #6b7280;">F1-SCORE</div>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.7rem; color: #6b7280;">
+                    Last Update: ${lastUpdate}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Refresh dashboard map with latest data
+    function refreshDashboardMap() {
+        if (!dashboardMap) {
+            initializeDashboardMap();
+            return;
+        }
+        
+        // Remove existing markers
+        Object.values(deviceMarkers).forEach(marker => {
+            dashboardMap.removeLayer(marker);
+        });
+        deviceMarkers = {};
+        
+        // Re-add markers with updated data
+        addDashboardDeviceMarkers();
+        
+        addActivityLogEntry('Device map refreshed with latest data', 'info');
+    }
+    
+    // Update device status summary
+    function updateDeviceStatusSummary() {
+        const summaryContainer = document.getElementById('device-status-summary');
+        if (!summaryContainer) return;
+        
+        let html = '';
+        
+        Object.keys(deviceData).forEach(deviceKey => {
+            const device = deviceData[deviceKey];
+            const status = getDashboardDeviceStatus(deviceKey);
+            const metrics = getDashboardDeviceMetrics(deviceKey);
+            
+            const statusClass = status === 'online' ? 'text-success' : 
+                               status === 'training' ? 'text-warning' : 'text-danger';
+            const statusIcon = status === 'online' ? 'fa-check-circle' : 
+                              status === 'training' ? 'fa-sync-alt fa-spin' : 'fa-times-circle';
+            
+            const accuracy = metrics ? (metrics.accuracy * 100).toFixed(1) : '0.0';
+            const f1Score = metrics ? (metrics.f1_score * 100).toFixed(1) : '0.0';
+            const lastUpdate = metrics && metrics.timestamp ? new Date(metrics.timestamp).toLocaleTimeString() : 'Never';
+            
+            html += `
+                <div class="device-info-card mb-3" style="background: var(--card-bg); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--border-color);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="mb-1" style="color: ${device.color};">
+                                <i class="${device.icon} me-2"></i>${device.name}
+                            </h6>
+                            <small class="text-muted">${device.description}</small>
+                        </div>
+                        <span class="${statusClass}">
+                            <i class="fas ${statusIcon}"></i>
+                        </span>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="text-success fw-bold">${accuracy}%</div>
+                            <small class="text-muted">Accuracy</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-info fw-bold">${f1Score}%</div>
+                            <small class="text-muted">F1-Score</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted fw-bold">${status.toUpperCase()}</div>
+                            <small class="text-muted">Status</small>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Last Update: ${lastUpdate}</small>
+                    </div>
+                </div>
+            `;
+        });
+        
+        summaryContainer.innerHTML = html;
+    }
+    
+    // Load initial data
+    function loadInitialData() {
+        // Reset error flags
+        window.performanceDataErrorLogged = false;
+        window.performanceChartErrorLogged = false;
+        
+        fetch('/api/models/info')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.error) {
+                    updateModelsTable(data);
+                } else {
+                    console.warn('Error loading models info:', data.error);
+                }
+            })
+            .catch(error => console.error('Error loading models info:', error));
+        
+        fetch('/api/metrics/latest')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.error) {
+                    updateMetrics(data);
+                } else {
+                    console.warn('Error loading metrics:', data.error);
+                }
+            })
+            .catch(error => console.error('Error loading metrics:', error));
+        
+        // Initial device status summary update
+        updateDeviceStatusSummary();
+    }
+    
+    // Fetch performance data specifically for charts
+    function fetchPerformanceData() {
+        fetch('/api/metrics/history')
+            .then(response => response.json())
+            .then(historyData => {
+                if (!historyData.error) {
+                    // Store the metrics history data
+                    metricsHistory = historyData;
+                    
+                    // Only update sparkline since performance chart was removed
+                    updateSimplifiedPerformanceChart(historyData);
+                    
+                    // Clear any previous error flag
+                    window.performanceDataErrorLogged = false;
+                    
+                    // Add a success message if we had errors before
+                    if (window.hadPreviousPerformanceError) {
+                        addActivityLogEntry('Performance data loaded successfully', 'success');
+                        window.hadPreviousPerformanceError = false;
+                    }
+                } else {
+                    console.warn('API returned error for metrics history:', historyData.error);
+                    
+                    // Check if system is initializing
+                    if (historyData.status === 'initializing') {
+                        // Only log initializing message once to avoid spam
+                        if (!window.performanceDataInitializingLogged) {
+                            addActivityLogEntry(historyData.message || 'System is initializing. Performance data will be available soon.', 'info');
+                            window.performanceDataInitializingLogged = true;
+                        }
+                    } else {
+                        // Only log to activity once to avoid spam
+                        if (!window.performanceDataErrorLogged) {
+                            addActivityLogEntry('Unable to load performance data: ' + historyData.error, 'error');
+                            window.performanceDataErrorLogged = true;
+                            window.hadPreviousPerformanceError = true;
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading metrics history:', error);
+                
+                // Only log to activity once to avoid spam
+                if (!window.performanceDataErrorLogged) {
+                    // Check if system is initialized before showing error
+                    if (!window.systemInitialized) {
+                        addActivityLogEntry('Performance data not available yet. System is still initializing.', 'info');
+                    } else {
+                        addActivityLogEntry('Unable to load performance data. Try refreshing the page or check server logs.', 'error');
+                        window.hadPreviousPerformanceError = true;
+                    }
+                    window.performanceDataErrorLogged = true;
+                }
+            });
+    }
+    
+    // Update metrics (called from base.html)
+    function updateMetrics(data) {
+        if (data.error) return;
+        
+        // Store latest metrics data for map and device status
+        latestMetricsData = data;
+        
+        // Update global metrics
+        if (data.global && Object.keys(data.global).length > 0) {
+            document.getElementById('global-accuracy').textContent = 
+                formatPercentage(data.global.accuracy || 0);
+            
+            // Also update best accuracy in quick stats
+            document.getElementById('best-accuracy').textContent = 
+                formatPercentage(data.global.accuracy || 0);
+        }
+        
+        // Update local models count
+        const localCount = Object.keys(data.local || {}).length;
+        document.getElementById('local-models-count').textContent = localCount;
+        document.getElementById('active-models').textContent = localCount;
+        document.getElementById('ready-models').textContent = localCount;
+        
+        // Update comparison chart with latest metrics
+        updateComparisonChart(data);
+        
+        // Refresh history data for performance chart
+        fetchPerformanceData();
+        
+        // Update models table
+        updateModelsTableMetrics(data);
+        
+        // Update dashboard map and device status with real data
+        if (dashboardMap) {
+            refreshDashboardMap();
+        }
+        updateDeviceStatusSummary();
+    }
+    
+    // Update results (called from base.html)
+    function updateResults(data) {
+        if (data.error || !data.round) return;
+        
+        // Update training round
+        document.getElementById('training-round').textContent = data.round;
+        document.getElementById('total-rounds').textContent = data.round;
+        
+        // Update progress
+        if (systemStatus.training) {
+            const progress = (data.round / systemStatus.total_rounds) * 100;
+            document.getElementById('training-progress').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = 
+                `Round ${data.round} of ${systemStatus.total_rounds}`;
+        }
+        
+        // Add to activity log
+        addActivityLogEntry(`Round ${data.round} completed`, 'success');
+        
+        // Update quick stats
+        updateQuickStats(data);
+        
+        // Refresh performance data
+        fetchPerformanceData();
+    }
+    
+    // Create simplified performance chart for dashboard (removed)
+    function createSimplifiedPerformanceChart() {
+        // Performance chart was removed from dashboard
+        console.log("Performance chart was removed from dashboard");
+    }
+    
+    // Update simplified performance chart with real data (removed)
+    function updateSimplifiedPerformanceChart(data) {
+        try {
+            // Extract global model data for sparkline only
+            if (data.global && Array.isArray(data.global) && data.global.length > 0) {
+                // Sort rounds to ensure proper ordering
+                const sortedGlobal = [...data.global].sort((a, b) => (a.round || 0) - (b.round || 0));
+                
+                // Get accuracy values for sparkline
+                const accuracies = sortedGlobal.map(entry => (entry.accuracy || 0) * 100);
+                
+                // Update sparkline with actual global model data
+                updateSparkline(accuracies);
+            }
+        } catch (error) {
+            console.error('Error updating metrics data:', error);
+        }
+    }
+    
+    // Update performance chart with real data - use the simplified version
+    function updatePerformanceChart(data) {
+        updateSimplifiedPerformanceChart(data);
+    }
+    
+    // Update sparkline with real data
+    function updateSparkline(accuracies) {
+        if (!accuracies || accuracies.length === 0) return;
+        
+        try {
+            // Use the last 10 points or fewer if that's all we have
+            const points = accuracies.slice(-10);
+            
+            const trace = {
+                x: Array.from({length: points.length}, (_, i) => i + 1),
+                y: points,
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: 'rgba(255,255,255,0.9)', width: 2 },
+                fill: 'tonexty',
+                fillcolor: 'rgba(255,255,255,0.15)',
+                showlegend: false,
+                hoverinfo: 'none'
+            };
+            
+            const layout = {
+                margin: { l: 0, r: 0, t: 0, b: 0 },
+                xaxis: { visible: false },
+                yaxis: { visible: false, range: [0, 100] },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                autosize: true
+            };
+            
+            Plotly.react('accuracy-sparkline', [trace], layout, {
+                displayModeBar: false,
+                responsive: true
+            });
+        } catch (error) {
+            console.error('Error updating sparkline:', error);
+        }
+    }
+    
+    // Update comparison chart with latest metrics
+    function updateComparisonChart(latestMetrics) {
+        try {
+            const models = [];
+            const accuracies = [];
+            const f1Scores = [];
+            const colors = ['#4361ee', '#ff5e57', '#05c46b', '#ffa801', '#3dc7ff'];
+            
+            // Global model
+            if (latestMetrics.global && latestMetrics.global.accuracy !== undefined) {
+                models.push('Global Model');
+                accuracies.push((latestMetrics.global.accuracy || 0) * 100);
+                f1Scores.push((latestMetrics.global.f1_score || 0) * 100);
+            }
+            
+            // Local models
+            if (latestMetrics.local && typeof latestMetrics.local === 'object') {
+                Object.entries(latestMetrics.local).forEach(([modelName, metrics]) => {
+                    if (metrics && metrics.accuracy !== undefined) {
+                        models.push(modelName.replace('_', ' ').toUpperCase());
+                        accuracies.push((metrics.accuracy || 0) * 100);
+                        f1Scores.push((metrics.f1_score || 0) * 100);
+                    }
+                });
+            }
+            
+            // If no data, show placeholder
+            if (models.length === 0) {
+                models.push('No Data');
+                accuracies.push(0);
+                f1Scores.push(0);
+            }
+            
+            const traces = [
+                {
+                    x: models,
+                    y: accuracies,
+                    type: 'bar',
+                    name: 'Accuracy (%)',
+                    marker: { 
+                        color: colors[0],
+                        line: {
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            width: 1
+                        }
+                    },
+                    text: accuracies.map(acc => acc.toFixed(1) + '%'),
+                    textposition: 'auto',
+                    textfont: {
+                        color: 'white'
+                    }
+                },
+                {
+                    x: models,
+                    y: f1Scores,
+                    type: 'bar',
+                    name: 'F1-Score (%)',
+                    marker: { 
+                        color: colors[1],
+                        line: {
+                            color: 'rgba(255, 255, 255, 0.3)',
+                            width: 1
+                        }
+                    },
+                    text: f1Scores.map(f1 => f1.toFixed(1) + '%'),
+                    textposition: 'auto',
+                    textfont: {
+                        color: 'white'
+                    }
+                }
+            ];
+            
+            const layout = {
+                title: 'Model Performance Comparison',
+                xaxis: { 
+                    title: 'Models',
+                    color: '#b1c0da'
+                },
+                yaxis: { 
+                    title: 'Performance (%)', 
+                    range: [0, 100],
+                    color: '#b1c0da',
+                    gridcolor: 'rgba(255,255,255,0.1)'
+                },
+                autosize: true,
+                margin: { l: 50, r: 50, t: 50, b: 50 },
+                barmode: 'group',
+                hovermode: 'x unified',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                font: {
+                    color: '#ffffff'
+                },
+                legend: {
+                    font: {
+                        color: '#e8ecf5'
+                    }
+                }
+            };
+            
+            Plotly.react('comparison-chart', traces, layout);
+        } catch (error) {
+            console.error('Error updating comparison chart:', error);
+            addActivityLogEntry('Error updating comparison chart: ' + error.message, 'error');
+        }
+    }
+    
+    // Update models table
+    function updateModelsTable(modelsInfo) {
+        const tbody = document.getElementById('models-table-body');
+        let html = '';
+        
+        // Local models
+        Object.entries(modelsInfo.local_models || {}).forEach(([name, info]) => {
+            const statusBadge = info.is_loaded ? 
+                '<span class="badge bg-success">Loaded</span>' : 
+                '<span class="badge bg-danger">Not Loaded</span>';
+            
+            html += `
+                <tr>
+                    <td><strong>${name}</strong></td>
+                    <td>${info.type}</td>
+                    <td>${statusBadge}</td>
+                    <td id="accuracy-${name}">--</td>
+                    <td id="f1-${name}">--</td>
+                    <td id="updated-${name}">--</td>
+                </tr>
+            `;
+        });
+        
+        // Global model
+        if (modelsInfo.global_model && Object.keys(modelsInfo.global_model).length > 0) {
+            const globalInfo = modelsInfo.global_model;
+            const statusBadge = globalInfo.status === 'trained' ? 
+                '<span class="badge bg-success">Trained</span>' : 
+                '<span class="badge bg-warning">Built</span>';
+            
+            html += `
+                <tr class="table-primary">
+                    <td><strong>Global MLP</strong></td>
+                    <td>Neural Network</td>
+                    <td>${statusBadge}</td>
+                    <td id="accuracy-global">--</td>
+                    <td id="f1-global">--</td>
+                    <td id="updated-global">--</td>
+                </tr>
+            `;
+        }
+        
+        tbody.innerHTML = html;
+    }
+    
+    // Update models table with metrics
+    function updateModelsTableMetrics(data) {
+        // Update local models
+        Object.entries(data.local || {}).forEach(([name, metrics]) => {
+            if (Object.keys(metrics).length > 0) {
+                const accuracyEl = document.getElementById(`accuracy-${name}`);
+                const f1El = document.getElementById(`f1-${name}`);
+                const updatedEl = document.getElementById(`updated-${name}`);
+                
+                if (accuracyEl) accuracyEl.textContent = formatPercentage(metrics.accuracy);
+                if (f1El) f1El.textContent = formatPercentage(metrics.f1_score);
+                if (updatedEl) updatedEl.textContent = new Date(metrics.timestamp).toLocaleTimeString();
+            }
+        });
+        
+        // Update global model
+        if (data.global && Object.keys(data.global).length > 0) {
+            const accuracyEl = document.getElementById('accuracy-global');
+            const f1El = document.getElementById('f1-global');
+            const updatedEl = document.getElementById('updated-global');
+            
+            if (accuracyEl) accuracyEl.textContent = formatPercentage(data.global.accuracy);
+            if (f1El) f1El.textContent = formatPercentage(data.global.f1_score);
+            if (updatedEl) updatedEl.textContent = new Date(data.global.timestamp).toLocaleTimeString();
+        }
+    }
+    
+    // Update quick stats
+    function updateQuickStats(data) {
+        if (data.round) {
+            document.getElementById('total-rounds').textContent = data.round;
+        }
+        
+        // Calculate best accuracy from global metrics
+        if (data.global_metrics && data.global_metrics.accuracy) {
+            document.getElementById('best-accuracy').textContent = 
+                formatPercentage(data.global_metrics.accuracy);
+        }
+        
+        // Calculate average round time
+        if (data.round_time) {
+            document.getElementById('avg-round-time').textContent = 
+                formatTime(data.round_time);
+        }
+        
+        // Calculate improvement
+        fetch('/api/metrics/improvements')
+            .then(response => response.json())
+            .then(improvementData => {
+                if (!improvementData.error && improvementData.global && improvementData.global.accuracy_improvement) {
+                    document.getElementById('improvement').textContent = 
+                        formatNumber(improvementData.global.accuracy_improvement, 1) + '%';
+                }
+            })
+            .catch(error => console.error('Error loading improvements:', error));
+    }
+    
+    // Add activity log entry
+    function addActivityLogEntry(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const iconClass = type === 'success' ? 'fa-check-circle text-success' : 
+                         type === 'error' ? 'fa-exclamation-circle text-danger' : 
+                         'fa-info-circle text-info';
+        
+        const entry = `
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas ${iconClass} me-2"></i>
+                <div class="flex-grow-1">
+                    <small class="text-muted">${timestamp}</small>
+                    <div>${message}</div>
+                </div>
+            </div>
+        `;
+        
+        const logContainer = document.getElementById('activity-log');
+        
+        // Remove "no activity" message if present
+        if (logContainer.querySelector('.text-center')) {
+            logContainer.innerHTML = '';
+        }
+        
+        logContainer.insertAdjacentHTML('afterbegin', entry);
+        
+        // Keep only last 10 entries
+        const entries = logContainer.querySelectorAll('.d-flex');
+        if (entries.length > 10) {
+            entries[entries.length - 1].remove();
+        }
+    }
+    
+    // Clear activity log
+    function clearActivityLog() {
+        const logContainer = document.getElementById('activity-log');
+        logContainer.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <p>Activity log cleared</p>
+            </div>
+        `;
+        
+        // Add a confirmation message
+        setTimeout(() => {
+            addActivityLogEntry('Activity log cleared', 'info');
+        }, 500);
+    }
+    
+    // Update system status display
+    function updateSystemStatus(status) {
+        // Call parent function
+        window.updateSystemStatus(status);
+        
+        // Update dashboard indicators
+        if (status.training) {
+            document.getElementById('system-uptime').textContent = 'Training';
+            
+            // Update round progress if we have one
+            if (status.current_round) {
+                // Add training activity if it's a new round
+                if (!window.lastReportedRound || window.lastReportedRound < status.current_round) {
+                    addActivityLogEntry(`Training round ${status.current_round} in progress`, 'info');
+                    window.lastReportedRound = status.current_round;
+                }
+            }
+        } else {
+            document.getElementById('system-uptime').textContent = status.initialized ? 'Ready' : 'Initializing';
+        }
+        
+        // Update dashboard status indicator
+        const dashboardStatus = document.getElementById('dashboard-status');
+        const statusDetail = document.getElementById('status-detail');
+        
+        if (dashboardStatus && statusDetail) {
+            if (status.error) {
+                dashboardStatus.className = 'status-indicator status-offline me-2';
+                statusDetail.textContent = 'Error: ' + status.error;
+            } else if (status.training) {
+                dashboardStatus.className = 'status-indicator status-training pulse me-2';
+                statusDetail.textContent = `Training Round ${status.current_round || 0}`;
+            } else if (status.initialized) {
+                dashboardStatus.className = 'status-indicator status-online me-2';
+                statusDetail.textContent = 'System Ready';
+            } else {
+                dashboardStatus.className = 'status-indicator status-offline me-2';
+                statusDetail.textContent = 'Initializing...';
+            }
+        }
+    }
+    
+    // Override the global updateSystemStatus function
+    window.updateSystemStatus = updateSystemStatus;
+</script>
+{% endblock %} 

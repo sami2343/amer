@@ -1,0 +1,900 @@
+{% extends "base.html" %}
+
+{% block title %}About - HETROFL System{% endblock %}
+{% block page_title %}About HETROFL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 3rem 0;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        margin-bottom: 2rem;
+    }
+    
+    .feature-card {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 2rem;
+        height: 100%;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--gradient-primary);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+        background: var(--card-bg-hover);
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        color: var(--primary-light);
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+    
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+    
+    .feature-description {
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    
+    /* Federated Learning Animation */
+    .fl-diagram {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        padding: 2rem;
+        margin: 2rem 0;
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+    }
+    
+    .fl-diagram-title {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: var(--text-color);
+    }
+    
+    .fl-container {
+        position: relative;
+        width: 100%;
+        height: 350px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .global-model {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 120px;
+        background: var(--gradient-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        box-shadow: var(--shadow-lg);
+        z-index: 10;
+        animation: globalPulse 3s infinite;
+    }
+    
+    .local-model {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        box-shadow: var(--shadow-md);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .local-model:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .local-model.xgboost {
+        background: var(--gradient-primary);
+        top: 20%;
+        left: 20%;
+        animation: localFloat 4s infinite ease-in-out;
+    }
+    
+    .local-model.random-forest {
+        background: var(--gradient-success);
+        top: 20%;
+        right: 20%;
+        animation: localFloat 4s infinite ease-in-out 1.3s;
+    }
+    
+    .local-model.catboost {
+        background: var(--gradient-warning);
+        bottom: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: localFloat 4s infinite ease-in-out 2.6s;
+    }
+    
+    /* Data flow animations */
+    .data-flow {
+        position: absolute;
+        width: 4px;
+        background: var(--gradient-info);
+        border-radius: 2px;
+        opacity: 0;
+        animation: dataFlow 3s infinite;
+    }
+    
+    .flow-1 {
+        top: 25%;
+        left: 35%;
+        height: 100px;
+        transform: rotate(45deg);
+        animation-delay: 0s;
+    }
+    
+    .flow-2 {
+        top: 25%;
+        right: 35%;
+        height: 100px;
+        transform: rotate(-45deg);
+        animation-delay: 1s;
+    }
+    
+    .flow-3 {
+        bottom: 35%;
+        left: 50%;
+        height: 80px;
+        transform: translateX(-50%) rotate(90deg);
+        animation-delay: 2s;
+    }
+    
+    /* Knowledge distillation flows */
+    .knowledge-flow {
+        position: absolute;
+        width: 3px;
+        background: var(--gradient-secondary);
+        border-radius: 2px;
+        opacity: 0;
+        animation: knowledgeFlow 3s infinite;
+    }
+    
+    .knowledge-1 {
+        top: 35%;
+        left: 45%;
+        height: 80px;
+        transform: rotate(-45deg);
+        animation-delay: 1.5s;
+    }
+    
+    .knowledge-2 {
+        top: 35%;
+        right: 45%;
+        height: 80px;
+        transform: rotate(45deg);
+        animation-delay: 2.5s;
+    }
+    
+    .knowledge-3 {
+        bottom: 45%;
+        left: 50%;
+        height: 60px;
+        transform: translateX(-50%) rotate(-90deg);
+        animation-delay: 0.5s;
+    }
+    
+    /* Animations */
+    @keyframes globalPulse {
+        0%, 100% { 
+            transform: translate(-50%, -50%) scale(1);
+            box-shadow: var(--shadow-lg);
+        }
+        50% { 
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.5);
+        }
+    }
+    
+    @keyframes localFloat {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes dataFlow {
+        0% { 
+            opacity: 0;
+            transform: scale(1) rotate(var(--rotation, 0deg));
+        }
+        20% { 
+            opacity: 1;
+            transform: scale(1.2) rotate(var(--rotation, 0deg));
+        }
+        80% { 
+            opacity: 1;
+            transform: scale(1.2) rotate(var(--rotation, 0deg));
+        }
+        100% { 
+            opacity: 0;
+            transform: scale(1) rotate(var(--rotation, 0deg));
+        }
+    }
+    
+    @keyframes knowledgeFlow {
+        0% { 
+            opacity: 0;
+            transform: scale(1) rotate(var(--rotation, 0deg));
+        }
+        30% { 
+            opacity: 0.8;
+            transform: scale(1.1) rotate(var(--rotation, 0deg));
+        }
+        70% { 
+            opacity: 0.8;
+            transform: scale(1.1) rotate(var(--rotation, 0deg));
+        }
+        100% { 
+            opacity: 0;
+            transform: scale(1) rotate(var(--rotation, 0deg));
+        }
+    }
+    
+    .tech-spec {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .tech-spec h5 {
+        color: var(--primary-light);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .spec-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .spec-item:last-child {
+        border-bottom: none;
+    }
+    
+    .spec-label {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .spec-value {
+        color: var(--text-muted);
+        font-family: 'Courier New', monospace;
+    }
+    
+    .model-info {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .model-info:hover {
+        background: var(--card-bg-hover);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .model-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .model-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+    
+    .model-icon.xgboost { background: var(--gradient-primary); }
+    .model-icon.random-forest { background: var(--gradient-success); }
+    .model-icon.catboost { background: var(--gradient-warning); }
+    
+    .model-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 0;
+    }
+    
+    .model-description {
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        background: var(--card-bg-hover);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-light);
+        margin-bottom: 0.5rem;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .stat-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1rem;
+        }
+        
+        .fl-container {
+            height: 300px;
+        }
+        
+        .global-model {
+            width: 100px;
+            height: 100px;
+            font-size: 1.5rem;
+        }
+        
+        .local-model {
+            width: 60px;
+            height: 60px;
+            font-size: 1rem;
+        }
+        
+        .feature-card {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">HETROFL</h1>
+        <p class="hero-subtitle">Heterogeneous Federated Learning System</p>
+        <p class="mb-0">Advanced machine learning collaboration across diverse IoT devices</p>
+    </div>
+</div>
+
+<!-- Animated Federated Learning Diagram -->
+<div class="row">
+    <div class="col-12">
+        <div class="fl-diagram">
+            <h3 class="fl-diagram-title">
+                <i class="fas fa-project-diagram me-2"></i>
+                Federated Learning Process
+            </h3>
+            <div class="fl-container">
+                <!-- Global Model -->
+                <div class="global-model" title="Global MLP Model">
+                    <i class="fas fa-brain"></i>
+                </div>
+                
+                <!-- Local Models -->
+                <div class="local-model xgboost" title="XGBoost Model">
+                    XGB
+                </div>
+                <div class="local-model random-forest" title="Random Forest Model">
+                    RF
+                </div>
+                <div class="local-model catboost" title="CatBoost Model">
+                    CB
+                </div>
+                
+                <!-- Data Flow Lines (Local to Global) -->
+                <div class="data-flow flow-1"></div>
+                <div class="data-flow flow-2"></div>
+                <div class="data-flow flow-3"></div>
+                
+                <!-- Knowledge Distillation Lines (Global to Local) -->
+                <div class="knowledge-flow knowledge-1"></div>
+                <div class="knowledge-flow knowledge-2"></div>
+                <div class="knowledge-flow knowledge-3"></div>
+            </div>
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Blue flows: Local model updates • Teal flows: Knowledge distillation
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Features -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-star me-2"></i>
+            Key Features
+        </h2>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-network-wired feature-icon"></i>
+            <h4 class="feature-title">Heterogeneous Learning</h4>
+            <p class="feature-description">
+                Supports multiple machine learning model types (XGBoost, Random Forest, CatBoost) 
+                working together in a federated environment.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-graduation-cap feature-icon"></i>
+            <h4 class="feature-title">Knowledge Distillation</h4>
+            <p class="feature-description">
+                Advanced knowledge transfer from global neural network model to local models 
+                using configurable distillation parameters.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-shield-alt feature-icon"></i>
+            <h4 class="feature-title">Privacy-Preserving</h4>
+            <p class="feature-description">
+                Federated learning ensures data privacy by keeping local data on devices 
+                while sharing only model updates.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-chart-line feature-icon"></i>
+            <h4 class="feature-title">Real-time Monitoring</h4>
+            <p class="feature-description">
+                Comprehensive metrics tracking and visualization with live updates 
+                during training and evaluation phases.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-cogs feature-icon"></i>
+            <h4 class="feature-title">Adaptive Learning</h4>
+            <p class="feature-description">
+                Performance-based model weight aggregation and incremental learning 
+                strategies for optimal convergence.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="feature-card">
+            <i class="fas fa-globe feature-icon"></i>
+            <h4 class="feature-title">IoT Integration</h4>
+            <p class="feature-description">
+                Designed specifically for IoT environments with support for 
+                network security datasets and device-specific optimizations.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Model Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-brain me-2"></i>
+            Supported Models
+        </h2>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="model-info">
+            <div class="model-header">
+                <div class="model-icon xgboost">
+                    <i class="fas fa-tree"></i>
+                </div>
+                <h5 class="model-name">XGBoost</h5>
+            </div>
+            <p class="model-description">
+                Extreme Gradient Boosting model optimized for structured data. 
+                Deployed on Electric Vehicle Charging Station Controllers for 
+                real-time threat detection and anomaly analysis.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="model-info">
+            <div class="model-header">
+                <div class="model-icon random-forest">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                <h5 class="model-name">Random Forest</h5>
+            </div>
+            <p class="model-description">
+                Ensemble learning method using multiple decision trees. 
+                Integrated with Industrial IoT Sensor Nodes for robust 
+                classification and feature importance analysis.
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="model-info">
+            <div class="model-header">
+                <div class="model-icon catboost">
+                    <i class="fas fa-cat"></i>
+                </div>
+                <h5 class="model-name">CatBoost</h5>
+            </div>
+            <p class="model-description">
+                Gradient boosting framework with categorical feature support. 
+                Deployed on Smart Home Security Cameras for efficient 
+                pattern recognition and behavioral analysis.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Technical Specifications -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="tech-spec">
+            <h5>
+                <i class="fas fa-microchip me-2"></i>
+                System Architecture
+            </h5>
+            <div class="spec-item">
+                <span class="spec-label">Framework</span>
+                <span class="spec-value">Python 3.10+</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">ML Libraries</span>
+                <span class="spec-value">TensorFlow, XGBoost, CatBoost</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Web Interface</span>
+                <span class="spec-value">Flask + SocketIO</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Visualization</span>
+                <span class="spec-value">Plotly, Matplotlib</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Data Processing</span>
+                <span class="spec-value">Pandas, NumPy, Dask</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="tech-spec">
+            <h5>
+                <i class="fas fa-cog me-2"></i>
+                Configuration
+            </h5>
+            <div class="spec-item">
+                <span class="spec-label">Max FL Rounds</span>
+                <span class="spec-value">50</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Min Clients</span>
+                <span class="spec-value">2</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Knowledge Distillation</span>
+                <span class="spec-value">Configurable Alpha</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Model Aggregation</span>
+                <span class="spec-value">Performance-based Weights</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Dataset</span>
+                <span class="spec-value">NF-ToN-IoT-v3</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-chart-bar me-2"></i>
+            System Capabilities
+        </h2>
+    </div>
+</div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Model Types</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">50</div>
+        <div class="stat-label">Max FL Rounds</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Scalable Clients</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Real-time Monitoring</div>
+    </div>
+</div>
+
+<!-- Additional Information -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i>
+                About This System
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    HETROFL (Heterogeneous Federated Learning) is an advanced machine learning system 
+                    designed specifically for IoT environments where different types of devices need to 
+                    collaborate while maintaining data privacy and security.
+                </p>
+                <p class="mb-3">
+                    The system implements a novel approach to federated learning by supporting multiple 
+                    heterogeneous model types working together through knowledge distillation. This allows 
+                    devices with different computational capabilities and data characteristics to participate 
+                    in the same learning process.
+                </p>
+                <p class="mb-0">
+                    Built with modern web technologies and comprehensive monitoring capabilities, HETROFL 
+                    provides researchers and practitioners with a powerful platform for exploring federated 
+                    learning in real-world IoT scenarios.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add interactive hover effects to the FL diagram
+    document.addEventListener('DOMContentLoaded', function() {
+        const localModels = document.querySelectorAll('.local-model');
+        const globalModel = document.querySelector('.global-model');
+        
+        // Add click handlers for model information
+        localModels.forEach(model => {
+            model.addEventListener('click', function() {
+                const modelType = this.classList[1]; // xgboost, random-forest, catboost
+                showModelInfo(modelType);
+            });
+        });
+        
+        globalModel.addEventListener('click', function() {
+            showModelInfo('global');
+        });
+        
+        // Add animation control
+        let animationPaused = false;
+        const diagram = document.querySelector('.fl-diagram');
+        
+        diagram.addEventListener('click', function(e) {
+            if (e.target === this) {
+                toggleAnimation();
+            }
+        });
+        
+        function toggleAnimation() {
+            const flows = document.querySelectorAll('.data-flow, .knowledge-flow');
+            const models = document.querySelectorAll('.local-model, .global-model');
+            
+            if (animationPaused) {
+                flows.forEach(flow => flow.style.animationPlayState = 'running');
+                models.forEach(model => model.style.animationPlayState = 'running');
+                animationPaused = false;
+                showAlert('Animation resumed', 'info', 2000);
+            } else {
+                flows.forEach(flow => flow.style.animationPlayState = 'paused');
+                models.forEach(model => model.style.animationPlayState = 'paused');
+                animationPaused = true;
+                showAlert('Animation paused', 'info', 2000);
+            }
+        }
+        
+        function showModelInfo(modelType) {
+            const modelInfo = {
+                'xgboost': {
+                    name: 'XGBoost Model',
+                    description: 'Extreme Gradient Boosting model for Electric Vehicle Charging Station Controllers',
+                    features: ['High Performance', 'Structured Data Optimization', 'Real-time Processing']
+                },
+                'random-forest': {
+                    name: 'Random Forest Model',
+                    description: 'Ensemble learning method for Industrial IoT Sensor Nodes',
+                    features: ['Robust Classification', 'Feature Importance', 'Overfitting Resistance']
+                },
+                'catboost': {
+                    name: 'CatBoost Model',
+                    description: 'Gradient boosting framework for Smart Home Security Cameras',
+                    features: ['Categorical Support', 'Fast Training', 'High Accuracy']
+                },
+                'global': {
+                    name: 'Global MLP Model',
+                    description: 'Central neural network coordinating federated learning',
+                    features: ['Knowledge Aggregation', 'Model Coordination', 'Distillation Hub']
+                }
+            };
+            
+            const info = modelInfo[modelType];
+            if (info) {
+                const featuresHtml = info.features.map(feature => 
+                    `<li class="text-muted">${feature}</li>`
+                ).join('');
+                
+                const content = `
+                    <h5 class="text-primary">${info.name}</h5>
+                    <p class="mb-3">${info.description}</p>
+                    <h6>Key Features:</h6>
+                    <ul class="mb-0">${featuresHtml}</ul>
+                `;
+                
+                document.getElementById('model-details-title').textContent = info.name;
+                document.getElementById('model-details-content').innerHTML = content;
+                
+                const modal = new bootstrap.Modal(document.getElementById('modelDetailsModal'));
+                modal.show();
+            }
+        }
+        
+        // Add scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe feature cards and other elements
+        document.querySelectorAll('.feature-card, .model-info, .tech-spec, .stat-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+        
+        // Add tooltip information
+        const tooltips = [
+            { selector: '.global-model', title: 'Global MLP Model - Central coordination hub' },
+            { selector: '.local-model.xgboost', title: 'XGBoost - Electric Vehicle Charging Station' },
+            { selector: '.local-model.random-forest', title: 'Random Forest - Industrial IoT Sensor' },
+            { selector: '.local-model.catboost', title: 'CatBoost - Smart Home Security Camera' }
+        ];
+        
+        tooltips.forEach(tooltip => {
+            const element = document.querySelector(tooltip.selector);
+            if (element) {
+                element.setAttribute('data-bs-toggle', 'tooltip');
+                element.setAttribute('data-bs-placement', 'top');
+                element.setAttribute('title', tooltip.title);
+                new bootstrap.Tooltip(element);
+            }
+        });
+    });
+</script>
+{% endblock %}

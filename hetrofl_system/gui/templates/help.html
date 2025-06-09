@@ -1,0 +1,1101 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Documentation - HETROFL System{% endblock %}
+{% block page_title %}Help & Documentation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-header {
+        background: var(--gradient-info);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .help-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .help-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .search-container {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .search-box {
+        position: relative;
+    }
+    
+    .search-input {
+        background: var(--light-dark);
+        border: 2px solid var(--border-color);
+        color: var(--text-color);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
+        outline: none;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+    
+    .help-section {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+    
+    .section-header {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .section-header:hover {
+        background: var(--gradient-secondary);
+    }
+    
+    .section-header i {
+        margin-right: 0.75rem;
+        font-size: 1.3rem;
+    }
+    
+    .section-content {
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .section-content.active {
+        max-height: 2000px;
+    }
+    
+    .faq-item {
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+    
+    .faq-question {
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        color: var(--text-color);
+        font-weight: 500;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-question:hover {
+        background: var(--card-bg-hover);
+        color: var(--primary-light);
+    }
+    
+    .faq-question.active {
+        background: var(--card-bg-hover);
+        color: var(--primary-light);
+    }
+    
+    .faq-icon {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .faq-question.active .faq-icon {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        padding: 0 1.5rem;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .faq-answer.active {
+        padding: 1.25rem 1.5rem;
+        max-height: 500px;
+    }
+    
+    .faq-answer-content {
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    
+    .code-block {
+        background: var(--dark-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: var(--text-light);
+        overflow-x: auto;
+        position: relative;
+    }
+    
+    .code-block::before {
+        content: 'Code';
+        position: absolute;
+        top: 0.5rem;
+        right: 0.75rem;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .step-list {
+        counter-reset: step-counter;
+        list-style: none;
+        padding: 0;
+    }
+    
+    .step-item {
+        counter-increment: step-counter;
+        margin-bottom: 1.5rem;
+        padding-left: 3rem;
+        position: relative;
+    }
+    
+    .step-item::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        background: var(--gradient-primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    
+    .step-title {
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .step-description {
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    
+    .alert-tip {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--success-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: var(--text-color);
+    }
+    
+    .alert-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid var(--warning-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: var(--text-color);
+    }
+    
+    .alert-danger {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: var(--text-color);
+    }
+    
+    .contact-card {
+        background: var(--gradient-info);
+        color: white;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    .contact-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .contact-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-info {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quick-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .quick-link {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-decoration: none;
+        color: var(--text-color);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .quick-link:hover {
+        background: var(--card-bg-hover);
+        color: var(--primary-light);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        text-decoration: none;
+    }
+    
+    .quick-link-icon {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        color: var(--primary-light);
+    }
+    
+    .quick-link-text {
+        flex: 1;
+    }
+    
+    .quick-link-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .quick-link-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-muted);
+    }
+    
+    .no-results i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+        .help-title {
+            font-size: 2rem;
+        }
+        
+        .step-item {
+            padding-left: 2.5rem;
+        }
+        
+        .step-item::before {
+            width: 1.5rem;
+            height: 1.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .quick-links {
+            grid-template-columns: 1fr;
+        }
+        
+        .search-input {
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+        }
+        
+        .search-icon {
+            left: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Help Header -->
+<div class="help-header">
+    <h1 class="help-title">
+        <i class="fas fa-question-circle me-3"></i>
+        Help Center
+    </h1>
+    <p class="help-subtitle">Find answers, troubleshoot issues, and learn how to use HETROFL effectively</p>
+</div>
+
+<!-- Search Box -->
+<div class="search-container">
+    <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" id="help-search" placeholder="Search for help topics, FAQs, or troubleshooting guides...">
+    </div>
+    <div class="mt-3">
+        <small class="text-muted">
+            <i class="fas fa-lightbulb me-1"></i>
+            Try searching for: "training", "models", "metrics", "errors", "installation"
+        </small>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="quick-links">
+    <a href="#getting-started" class="quick-link">
+        <i class="fas fa-rocket quick-link-icon"></i>
+        <div class="quick-link-text">
+            <div class="quick-link-title">Getting Started</div>
+            <div class="quick-link-desc">Learn the basics of HETROFL</div>
+        </div>
+    </a>
+    <a href="#training-guide" class="quick-link">
+        <i class="fas fa-play-circle quick-link-icon"></i>
+        <div class="quick-link-text">
+            <div class="quick-link-title">Training Guide</div>
+            <div class="quick-link-desc">How to start and manage training</div>
+        </div>
+    </a>
+    <a href="#troubleshooting" class="quick-link">
+        <i class="fas fa-tools quick-link-icon"></i>
+        <div class="quick-link-text">
+            <div class="quick-link-title">Troubleshooting</div>
+            <div class="quick-link-desc">Solve common issues</div>
+        </div>
+    </a>
+    <a href="#api-reference" class="quick-link">
+        <i class="fas fa-code quick-link-icon"></i>
+        <div class="quick-link-text">
+            <div class="quick-link-title">API Reference</div>
+            <div class="quick-link-desc">Technical documentation</div>
+        </div>
+    </a>
+</div>
+
+<!-- Getting Started Section -->
+<div class="help-section" id="getting-started">
+    <div class="section-header" onclick="toggleSection('getting-started')">
+        <i class="fas fa-rocket"></i>
+        Getting Started
+        <i class="fas fa-chevron-down ms-auto"></i>
+    </div>
+    <div class="section-content">
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                What is HETROFL and how does it work?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>HETROFL (Heterogeneous Federated Learning) is an advanced machine learning system that enables different types of models to collaborate while keeping data private. The system works by:</p>
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <div class="step-title">Local Training</div>
+                            <div class="step-description">Each device trains its local model (XGBoost, Random Forest, or CatBoost) on its own data</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Model Updates</div>
+                            <div class="step-description">Local models send only their learned parameters to the global coordinator</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Global Aggregation</div>
+                            <div class="step-description">The global MLP model aggregates knowledge from all local models</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Knowledge Distillation</div>
+                            <div class="step-description">Improved knowledge is distributed back to local models</div>
+                        </li>
+                    </ol>
+                    <div class="alert-tip">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> Visit the About page to see an animated diagram of this process!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                How do I navigate the HETROFL interface?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>The HETROFL interface consists of several main sections:</p>
+                    <ul>
+                        <li><strong>Dashboard:</strong> Overview of system status and key metrics</li>
+                        <li><strong>Models:</strong> Information about local and global models</li>
+                        <li><strong>Training Control:</strong> Start, stop, and monitor training sessions</li>
+                        <li><strong>Metrics:</strong> Detailed performance analytics and visualizations</li>
+                        <li><strong>IoT Device Map:</strong> Geographic view of device locations</li>
+                        <li><strong>About:</strong> System information and architecture</li>
+                        <li><strong>Help:</strong> This documentation and troubleshooting guide</li>
+                    </ul>
+                    <div class="alert-tip">
+                        <i class="fas fa-mouse-pointer me-2"></i>
+                        <strong>Navigation Tip:</strong> Use the sidebar menu to switch between sections. The current page is highlighted in blue.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                What are the system requirements?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>HETROFL requires the following components:</p>
+                    <div class="code-block">
+# Python Requirements
+Python 3.10 or higher
+
+# Core Dependencies
+flask
+flask-socketio
+pandas
+numpy
+scikit-learn
+xgboost
+catboost
+tensorflow
+plotly
+matplotlib
+seaborn
+dask
+tqdm
+psutil</div>
+                    <div class="alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Ensure you have sufficient RAM (minimum 8GB recommended) for processing large datasets.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Guide Section -->
+<div class="help-section" id="training-guide">
+    <div class="section-header" onclick="toggleSection('training-guide')">
+        <i class="fas fa-play-circle"></i>
+        Training Guide
+        <i class="fas fa-chevron-down ms-auto"></i>
+    </div>
+    <div class="section-content">
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                How do I start a training session?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <div class="step-title">Navigate to Training Control</div>
+                            <div class="step-description">Click on "Training Control" in the sidebar menu</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Configure Parameters</div>
+                            <div class="step-description">Set sample size (default: 50,000) and max rounds (default: 50)</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Start Training</div>
+                            <div class="step-description">Click the "Start Federated Training" button</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Monitor Progress</div>
+                            <div class="step-description">Watch real-time updates in the training log and metrics</div>
+                        </li>
+                    </ol>
+                    <div class="alert-tip">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Training Time:</strong> Typical training sessions take 10-30 minutes depending on data size and rounds.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                What do the training parameters mean?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Understanding the key training parameters:</p>
+                    <ul>
+                        <li><strong>Sample Size:</strong> Number of data points to use for training (affects speed vs. accuracy)</li>
+                        <li><strong>Max Rounds:</strong> Maximum number of federated learning rounds (1-50)</li>
+                        <li><strong>Knowledge Distillation Alpha:</strong> Controls how much global knowledge is transferred to local models</li>
+                        <li><strong>Aggregation Method:</strong> How local model updates are combined (performance-weighted)</li>
+                    </ul>
+                    <div class="alert-warning">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        <strong>Balance:</strong> Larger sample sizes improve accuracy but increase training time. Start with defaults and adjust based on your needs.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                How do I interpret training metrics?
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Key metrics to monitor during training:</p>
+                    <ul>
+                        <li><strong>Accuracy:</strong> Percentage of correct predictions (higher is better)</li>
+                        <li><strong>F1 Score:</strong> Balanced measure of precision and recall (0-1, higher is better)</li>
+                        <li><strong>Precision:</strong> Accuracy of positive predictions</li>
+                        <li><strong>Recall:</strong> Ability to find all positive instances</li>
+                        <li><strong>Loss:</strong> Training error (lower is better)</li>
+                        <li><strong>Training Time:</strong> Time taken for each round</li>
+                    </ul>
+                    <div class="alert-tip">
+                        <i class="fas fa-chart-line me-2"></i>
+                        <strong>Good Performance:</strong> Look for accuracy > 85%, F1 score > 0.8, and decreasing loss over rounds.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Troubleshooting Section -->
+<div class="help-section" id="troubleshooting">
+    <div class="section-header" onclick="toggleSection('troubleshooting')">
+        <i class="fas fa-tools"></i>
+        Troubleshooting
+        <i class="fas fa-chevron-down ms-auto"></i>
+    </div>
+    <div class="section-content">
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Training fails to start or stops unexpectedly
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Common causes and solutions:</p>
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <div class="step-title">Check System Status</div>
+                            <div class="step-description">Ensure the system status shows "Ready" (green indicator)</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Verify Data Files</div>
+                            <div class="step-description">Confirm the dataset file exists and is accessible</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Check Memory Usage</div>
+                            <div class="step-description">Reduce sample size if running out of memory</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Review Error Logs</div>
+                            <div class="step-description">Check the training log for specific error messages</div>
+                        </li>
+                    </ol>
+                    <div class="alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Memory Error:</strong> If you see "MemoryError", try reducing the sample size to 25,000 or less.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Charts and visualizations not loading
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Steps to resolve visualization issues:</p>
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <div class="step-title">Refresh the Page</div>
+                            <div class="step-description">Use Ctrl+F5 (or Cmd+Shift+R on Mac) for a hard refresh</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Check Internet Connection</div>
+                            <div class="step-description">Charts require CDN resources (Plotly.js) to load</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Clear Browser Cache</div>
+                            <div class="step-description">Clear browser cache and cookies for the site</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Try Different Browser</div>
+                            <div class="step-description">Test with Chrome, Firefox, or Edge</div>
+                        </li>
+                    </ol>
+                    <div class="alert-tip">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        <strong>Quick Fix:</strong> Click the refresh button in the top-right corner to reload data.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Poor model performance or low accuracy
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Strategies to improve model performance:</p>
+                    <ul>
+                        <li><strong>Increase Sample Size:</strong> Use more training data (up to 100,000 samples)</li>
+                        <li><strong>More Training Rounds:</strong> Increase max rounds to 30-50 for better convergence</li>
+                        <li><strong>Check Data Quality:</strong> Ensure the dataset is clean and properly formatted</li>
+                        <li><strong>Adjust Distillation:</strong> Fine-tune knowledge distillation parameters</li>
+                        <li><strong>Monitor Convergence:</strong> Look for steady improvement over rounds</li>
+                    </ul>
+                    <div class="alert-warning">
+                        <i class="fas fa-chart-line me-2"></i>
+                        <strong>Patience Required:</strong> Federated learning can take several rounds to show significant improvement.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Connection issues or "Disconnected" status
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Resolving connection problems:</p>
+                    <ol class="step-list">
+                        <li class="step-item">
+                            <div class="step-title">Check Server Status</div>
+                            <div class="step-description">Ensure the HETROFL server is running on localhost:5000</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Restart the Application</div>
+                            <div class="step-description">Stop and restart the Python application</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Check Firewall</div>
+                            <div class="step-description">Ensure port 5000 is not blocked by firewall</div>
+                        </li>
+                        <li class="step-item">
+                            <div class="step-title">Browser Compatibility</div>
+                            <div class="step-description">Use a modern browser with WebSocket support</div>
+                        </li>
+                    </ol>
+                    <div class="code-block">
+# Restart the application
+python run_hetrofl.py</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Reference Section -->
+<div class="help-section" id="api-reference">
+    <div class="section-header" onclick="toggleSection('api-reference')">
+        <i class="fas fa-code"></i>
+        API Reference
+        <i class="fas fa-chevron-down ms-auto"></i>
+    </div>
+    <div class="section-content">
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Available API Endpoints
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>HETROFL provides the following REST API endpoints:</p>
+                    <div class="code-block">
+# System Status
+GET /api/status
+
+# Model Information
+GET /api/models/info
+
+# Metrics
+GET /api/metrics/latest
+GET /api/metrics/history
+GET /api/metrics/improvements
+
+# Training Control
+POST /api/training/start
+POST /api/training/stop
+
+# Evaluation
+POST /api/evaluation/comprehensive
+
+# Results
+GET /api/results/latest
+GET /api/results/all
+
+# Plots
+GET /api/plots/metrics_comparison
+GET /api/plots/improvements
+GET /api/plots/training_progress
+GET /api/plots/model_accuracies</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                WebSocket Events
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Real-time updates are provided via WebSocket events:</p>
+                    <div class="code-block">
+# Client Events (send to server)
+'connect'           # Connect to server
+'disconnect'        # Disconnect from server
+'request_update'    # Request current status
+
+# Server Events (receive from server)
+'status_update'     # System status changes
+'metrics_update'    # New metrics available
+'results_update'    # Training results update
+'error'            # Error notifications</div>
+                    <div class="alert-tip">
+                        <i class="fas fa-plug me-2"></i>
+                        <strong>Real-time:</strong> The web interface automatically connects and receives live updates during training.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question" onclick="toggleFAQ(this)">
+                Configuration Options
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    <p>Key configuration parameters in <code>hetrofl_system/config.py</code>:</p>
+                    <div class="code-block">
+# Federated Learning Configuration
+FL_CONFIG = {
+    'max_rounds': 50,
+    'min_clients': 2,
+    'distillation_alpha': 0.5,
+    'aggregation_method': 'weighted_average'
+}
+
+# GUI Configuration
+GUI_CONFIG = {
+    'host': '0.0.0.0',
+    'port': 5000,
+    'debug': False
+}
+
+# Model Configurations
+LOCAL_MODELS = {
+    'xgboost': {...},
+    'random_forest': {...},
+    'catboost': {...}
+}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Section -->
+<div class="contact-card">
+    <i class="fas fa-headset contact-icon"></i>
+    <h3 class="contact-title">Need More Help?</h3>
+    <p class="contact-info">
+        If you can't find the answer you're looking for, don't hesitate to reach out for additional support.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+        <button class="btn btn-light" onclick="showAlert('Documentation updated regularly. Check back for new guides!', 'info')">
+            <i class="fas fa-book me-2"></i>
+            Documentation
+        </button>
+        <button class="btn btn-light" onclick="showAlert('Feature requests and bug reports are welcome!', 'success')">
+            <i class="fas fa-bug me-2"></i>
+            Report Issue
+        </button>
+    </div>
+</div>
+
+<!-- No Results Message (hidden by default) -->
+<div class="no-results" id="no-results" style="display: none;">
+    <i class="fas fa-search"></i>
+    <h4>No results found</h4>
+    <p>Try different keywords or browse the sections above.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('help-search');
+        const sections = document.querySelectorAll('.help-section');
+        const faqItems = document.querySelectorAll('.faq-item');
+        const noResults = document.getElementById('no-results');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            if (query === '') {
+                // Show all sections and items
+                sections.forEach(section => section.style.display = 'block');
+                faqItems.forEach(item => item.style.display = 'block');
+                noResults.style.display = 'none';
+                return;
+            }
+            
+            let hasResults = false;
+            
+            sections.forEach(section => {
+                let sectionHasResults = false;
+                const sectionFAQs = section.querySelectorAll('.faq-item');
+                
+                sectionFAQs.forEach(item => {
+                    const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                    const answer = item.querySelector('.faq-answer-content').textContent.toLowerCase();
+                    
+                    if (question.includes(query) || answer.includes(query)) {
+                        item.style.display = 'block';
+                        sectionHasResults = true;
+                        hasResults = true;
+                        
+                        // Highlight matching text
+                        highlightText(item, query);
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide section based on whether it has matching FAQs
+                section.style.display = sectionHasResults ? 'block' : 'none';
+                
+                // Auto-expand sections with results
+                if (sectionHasResults) {
+                    const content = section.querySelector('.section-content');
+                    content.classList.add('active');
+                }
+            });
+            
+            // Show no results message if nothing found
+            noResults.style.display = hasResults ? 'none' : 'block';
+        });
+        
+        // Initialize all sections as collapsed
+        document.querySelectorAll('.section-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Auto-expand Getting Started section
+        toggleSection('getting-started');
+    });
+    
+    // Highlight search terms
+    function highlightText(element, query) {
+        // Remove existing highlights
+        element.querySelectorAll('.highlight').forEach(highlight => {
+            highlight.outerHTML = highlight.innerHTML;
+        });
+        
+        // Add new highlights
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            textNodes.push(node);
+        }
+        
+        textNodes.forEach(textNode => {
+            const text = textNode.textContent;
+            const regex = new RegExp(`(${query})`, 'gi');
+            if (regex.test(text)) {
+                const highlightedText = text.replace(regex, '<span class="highlight" style="background: yellow; color: black; padding: 0 2px; border-radius: 2px;">$1</span>');
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = highlightedText;
+                textNode.parentNode.replaceChild(wrapper, textNode);
+                wrapper.outerHTML = wrapper.innerHTML;
+            }
+        });
+    }
+    
+    // Toggle section visibility
+    function toggleSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        const content = section.querySelector('.section-content');
+        const icon = section.querySelector('.section-header i:last-child');
+        
+        content.classList.toggle('active');
+        
+        if (content.classList.contains('active')) {
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+    
+    // Toggle FAQ item
+    function toggleFAQ(button) {
+        const faqItem = button.parentElement;
+        const answer = faqItem.querySelector('.faq-answer');
+        const icon = button.querySelector('.faq-icon');
+        
+        // Close other open FAQs in the same section
+        const section = faqItem.closest('.help-section');
+        section.querySelectorAll('.faq-question.active').forEach(activeButton => {
+            if (activeButton !== button) {
+                activeButton.classList.remove('active');
+                activeButton.querySelector('.faq-icon').style.transform = 'rotate(0deg)';
+                activeButton.parentElement.querySelector('.faq-answer').classList.remove('active');
+            }
+        });
+        
+        // Toggle current FAQ
+        button.classList.toggle('active');
+        answer.classList.toggle('active');
+        
+        if (button.classList.contains('active')) {
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+    
+    // Add smooth scrolling for quick links
+    document.querySelectorAll('.quick-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                // Expand the target section
+                const content = targetElement.querySelector('.section-content');
+                content.classList.add('active');
+                
+                // Smooth scroll to target
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Highlight the section briefly
+                targetElement.style.boxShadow = '0 0 20px rgba(79, 70, 229, 0.5)';
+                setTimeout(() => {
+                    targetElement.style.boxShadow = '';
+                }, 2000);
+            }
+        });
+    });
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('help-search').focus();
+        }
+        
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.getElementById('help-search');
+            if (searchInput === document.activeElement) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.blur();
+            }
+        }
+    });
+    
+    // Add copy code functionality
+    document.querySelectorAll('.code-block').forEach(codeBlock => {
+        codeBlock.addEventListener('click', function() {
+            const text = this.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('Code copied to clipboard!', 'success', 2000);
+            }).catch(() => {
+                showAlert('Failed to copy code', 'danger', 2000);
+            });
+        });
+        
+        // Add copy indicator
+        codeBlock.style.cursor = 'pointer';
+        codeBlock.title = 'Click to copy';
+    });
+</script>
+{% endblock %}

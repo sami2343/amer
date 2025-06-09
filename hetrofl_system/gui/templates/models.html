@@ -1,0 +1,2130 @@
+{% extends "base.html" %}
+
+{% block title %}Models - HETROFL System{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Enhanced Model Page Styling */
+    
+    /* Model cards */
+    .model-card {
+        transition: all 0.3s ease;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .model-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .model-card .card-header {
+        border-bottom: none;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .model-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .model-info-table {
+        margin-bottom: 0;
+    }
+    
+    .model-info-table td {
+        padding: 0.5rem;
+        border-color: rgba(var(--bs-secondary-rgb), 0.2);
+    }
+    
+    .model-info-value {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    /* Action buttons */
+    .action-btn {
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Model actions card */
+    .bg-light {
+        background-color: rgba(var(--bs-dark-rgb), 0.2) !important;
+        color: var(--text-color);
+    }
+    
+    .model-actions-card {
+        background-color: rgba(var(--bs-dark-rgb), 0.15) !important;
+        color: var(--text-color);
+        border: 1px solid rgba(var(--bs-secondary-rgb), 0.1);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Action buttons in model cards */
+    .btn-outline-primary, 
+    .btn-outline-success, 
+    .btn-outline-info, 
+    .btn-outline-warning {
+        color: var(--text-color);
+        border-color: currentColor;
+    }
+    
+    .btn-outline-primary:hover, 
+    .btn-outline-success:hover, 
+    .btn-outline-info:hover, 
+    .btn-outline-warning:hover {
+        color: white;
+    }
+    
+    /* Performance table */
+    #performance-summary-table {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    #performance-summary-table th {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--text-color);
+        font-weight: 600;
+        border-color: rgba(var(--bs-secondary-rgb), 0.1);
+    }
+    
+    #performance-summary-table td {
+        vertical-align: middle;
+        border-color: rgba(var(--bs-secondary-rgb), 0.1);
+    }
+    
+    /* Architecture visualization */
+    .architecture-diagram {
+        padding: 1.5rem;
+        text-align: center;
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+        border-radius: 1rem;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .arch-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    .arch-layer {
+        padding: 1rem;
+        border-radius: 1rem;
+        background-color: rgba(var(--bs-dark-rgb), 0.07);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        transform: translateY(20px);
+        opacity: 0;
+        z-index: 1;
+    }
+    
+    .arch-layer.animate-in {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .arch-layer:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        z-index: 2;
+    }
+    
+    .arch-layer.layer-active {
+        transform: translateY(-3px);
+        box-shadow: 0 0 20px rgba(var(--bs-primary-rgb), 0.4);
+        z-index: 10;
+    }
+    
+    .layer-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(var(--bs-secondary-rgb), 0.1);
+    }
+    
+    .layer-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(var(--bs-dark-rgb), 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .layer-title {
+        text-align: left;
+        flex-grow: 1;
+    }
+    
+    .layer-content {
+        padding: 0.5rem;
+    }
+    
+    .layer-connector {
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        opacity: 0;
+        transform: scaleY(0.5);
+        transition: all 0.4s ease-out;
+    }
+    
+    .layer-connector.animate-in {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    
+    .input-arch-layer .layer-icon {
+        background-color: rgba(var(--bs-primary-rgb), 0.2);
+        color: var(--primary-color);
+    }
+    
+    .hidden-arch-layer .layer-icon {
+        background-color: rgba(var(--bs-info-rgb), 0.2);
+        color: var(--info-color);
+    }
+    
+    .output-arch-layer .layer-icon {
+        background-color: rgba(var(--bs-success-rgb), 0.2);
+        color: var(--success-color);
+    }
+    
+    /* Neuron Visualization */
+    .neuron-visualization {
+        display: flex;
+        justify-content: center;
+        padding-top: 10px;
+    }
+    
+    .neurons {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .neuron {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    .input-neuron {
+        background-color: var(--primary-color);
+        box-shadow: 0 0 5px var(--primary-color);
+    }
+    
+    .hidden-neuron {
+        background-color: var(--info-color);
+        box-shadow: 0 0 5px var(--info-color);
+    }
+    
+    .output-neuron {
+        background-color: var(--success-color);
+        box-shadow: 0 0 5px var(--success-color);
+    }
+    
+    .connection-lines {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+    }
+    
+    .connection-line {
+        width: 2px;
+        height: 20px;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.6));
+        animation: flowDown 1.5s infinite alternate;
+    }
+    
+    /* Federated Flow */
+    .federated-flow-diagram {
+        padding: 1.5rem;
+        text-align: center;
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+        border-radius: 1rem;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .flow-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    .flow-step {
+        padding: 1rem;
+        border-radius: 1rem;
+        background-color: rgba(var(--bs-dark-rgb), 0.07);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    
+    .flow-step.animate-in {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .flow-step:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .flow-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(var(--bs-secondary-rgb), 0.1);
+    }
+    
+    .flow-icon {
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(var(--bs-dark-rgb), 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .flow-title {
+        text-align: left;
+        flex-grow: 1;
+    }
+    
+    .flow-title h6 {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+    }
+    
+    .flow-title p {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .flow-content {
+        padding: 0.5rem;
+    }
+    
+    /* Architecture-specific overrides */
+    .arch-layer .layer-title h6 {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+    }
+    
+    .layer-title .badge {
+        color: #ffffff;
+        font-weight: 500;
+    }
+    
+    /* Light mode overrides */
+    :root[data-theme="light"] .flow-title h6,
+    :root[data-theme="light"] .arch-layer .layer-title h6 {
+        color: rgba(0, 0, 0, 0.85);
+    }
+    
+    :root[data-theme="light"] .flow-title p {
+        color: rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    :root[data-theme="light"] .model-label {
+        color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Flow connector */
+    .flow-connector {
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        opacity: 0;
+        transform: scaleY(0.5);
+        transition: all 0.4s ease-out;
+    }
+    
+    .flow-connector.animate-in {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    
+    .connector-line {
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(to bottom, rgba(var(--bs-secondary-rgb), 0.2), rgba(var(--bs-secondary-rgb), 0.8));
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Data particles animation */
+    .data-particles-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .data-particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        left: -2px;
+        animation: flowParticle 2s infinite;
+        opacity: 0;
+    }
+    
+    .p1 {
+        background-color: var(--primary-color);
+        animation-delay: 0.2s;
+    }
+    
+    .p2 {
+        background-color: var(--warning-color);
+        animation-delay: 0.8s;
+    }
+    
+    .p3 {
+        background-color: var(--info-color);
+        animation-delay: 1.5s;
+    }
+    
+    @keyframes flowParticle {
+        0% { top: -5px; opacity: 0; }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { top: calc(100% + 5px); opacity: 0; }
+    }
+    
+    /* Local models grid */
+    .local-models-grid {
+        display: flex;
+        justify-content: space-around;
+        gap: 0.5rem;
+    }
+    
+    .local-model-card {
+        flex: 1;
+        padding: 0.75rem 0.5rem;
+        border-radius: 0.75rem;
+        background-color: rgba(var(--bs-dark-rgb), 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .local-model-card.active {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .model-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+    
+    .local-model-card[data-model="xgboost"] .model-icon {
+        color: var(--success-color);
+    }
+    
+    .local-model-card[data-model="random_forest"] .model-icon {
+        color: var(--primary-color);
+    }
+    
+    .local-model-card[data-model="catboost"] .model-icon {
+        color: var(--warning-color);
+    }
+    
+    .local-model-card.active .model-icon {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    
+    .model-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        transition: color 0.3s ease;
+    }
+    
+    .local-model-card.active .model-label {
+        color: var(--text-color);
+    }
+    
+    .model-activity {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background: radial-gradient(circle at center, transparent 30%, rgba(var(--bs-primary-rgb), 0) 70%);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+    
+    .model-activity.pulse {
+        opacity: 0.3;
+        animation: activityPulse 2s infinite;
+    }
+    
+    @keyframes activityPulse {
+        0% { transform: scale(0.8); opacity: 0; }
+        50% { opacity: 0.3; }
+        100% { transform: scale(1.2); opacity: 0; }
+    }
+    
+    /* Knowledge distillation visualization */
+    .distillation-animation {
+        display: flex;
+        align-items: center;
+        height: 60px;
+        gap: 0.5rem;
+    }
+    
+    .distill-source, .distill-target {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .source-nodes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .source-node {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        animation: glow 1.5s infinite alternate;
+    }
+    
+    .n1 {
+        background-color: var(--success-color);
+        animation-delay: 0.2s;
+    }
+    
+    .n2 {
+        background-color: var(--primary-color);
+        animation-delay: 0.5s;
+    }
+    
+    .n3 {
+        background-color: var(--warning-color);
+        animation-delay: 0.8s;
+    }
+    
+    .distill-process {
+        flex: 2;
+        height: 100%;
+        position: relative;
+    }
+    
+    .transfer-beam {
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(to right, transparent, var(--light-color), transparent);
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        overflow: hidden;
+    }
+    
+    .transfer-beam::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -20%;
+        width: 20%;
+        height: 100%;
+        background: linear-gradient(to right, transparent, white, transparent);
+        animation: transferBeam 2s infinite;
+    }
+    
+    @keyframes transferBeam {
+        0% { left: -20%; }
+        100% { left: 120%; }
+    }
+    
+    .target-node {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background-color: var(--info-color);
+        animation: throb 2s infinite;
+    }
+    
+    @keyframes throb {
+        0% { transform: scale(0.9); box-shadow: 0 0 0 rgba(var(--bs-info-rgb), 0.4); }
+        50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(var(--bs-info-rgb), 0.6); }
+        100% { transform: scale(0.9); box-shadow: 0 0 0 rgba(var(--bs-info-rgb), 0.4); }
+    }
+    
+    @keyframes glow {
+        0% { box-shadow: 0 0 2px currentColor; }
+        100% { box-shadow: 0 0 8px currentColor; }
+    }
+    
+    /* Neural network visualization */
+    .neural-network-visualization {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+    
+    .nn-layer {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .nn-neuron {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--text-color);
+        transition: all 0.3s ease;
+    }
+    
+    .input-layer .nn-neuron {
+        background-color: var(--primary-color);
+        box-shadow: 0 0 5px var(--primary-color);
+    }
+    
+    .hidden-layer .nn-neuron {
+        background-color: var(--info-color);
+        box-shadow: 0 0 5px var(--info-color);
+    }
+    
+    .output-layer .nn-neuron {
+        background-color: var(--success-color);
+        box-shadow: 0 0 5px var(--success-color);
+        animation: neuronPulse 2s infinite;
+    }
+    
+    .nn-connections {
+        width: 100%;
+        height: 25px;
+        position: relative;
+    }
+    
+    .connections-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .connection-path {
+        opacity: 0.4;
+        stroke-dashoffset: 100;
+        transition: stroke-dashoffset 1s ease-in-out;
+    }
+    
+    .connection-path.animate-connection {
+        animation: flowPath 2s infinite linear;
+    }
+    
+    @keyframes neuronPulse {
+        0% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 10px currentColor; }
+        100% { transform: scale(1); opacity: 0.7; }
+    }
+    
+    @keyframes flowPath {
+        0% { stroke-dashoffset: 20; }
+        100% { stroke-dashoffset: 0; }
+    }
+    
+    /* Modal improvements */
+    .modal-content {
+        border: none;
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        background: var(--gradient-primary);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .modal-body pre {
+        background-color: rgba(var(--bs-light-rgb), 0.05);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        color: var(--text-color);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    /* Light mode adjustments */
+    :root[data-theme="light"] .model-info-value {
+        color: var(--text-color);
+    }
+    
+    :root[data-theme="light"] .layer-box {
+        background-color: rgba(var(--bs-light-rgb), 0.8);
+    }
+    
+    :root[data-theme="light"] .architecture-diagram,
+    :root[data-theme="light"] .federated-flow-diagram {
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+    }
+    
+    :root[data-theme="light"] #performance-summary-table th {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--dark-color);
+    }
+    
+    :root[data-theme="light"] .flow-step {
+        background-color: rgba(var(--bs-light-rgb), 0.6);
+    }
+    
+    :root[data-theme="light"] .flow-icon {
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+    }
+    
+    :root[data-theme="light"] .local-model-card {
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+    }
+    
+    :root[data-theme="light"] .connector-line {
+        background: linear-gradient(to bottom, rgba(var(--bs-primary-rgb), 0.2), rgba(var(--bs-primary-rgb), 0.6));
+    }
+    
+    :root[data-theme="light"] .transfer-beam {
+        background: linear-gradient(to right, transparent, var(--dark-color), transparent);
+    }
+    
+    :root[data-theme="light"] .connection-path {
+        stroke: rgba(var(--bs-dark-rgb), 0.5);
+    }
+    
+    /* Animations for architecture and flow diagram */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.7; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.7; }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes flowDown {
+        0% { transform: translateY(-5px); opacity: 0.2; }
+        100% { transform: translateY(5px); opacity: 1; }
+    }
+    
+    .layer-connection i {
+        animation: flowDown 1.5s infinite alternate;
+    }
+    
+    .input-layer {
+        animation: fadeIn 0.6s ease-out;
+    }
+    
+    .hidden-layer {
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    .output-layer {
+        animation: fadeIn 1s ease-out;
+    }
+    
+    .flow-icon i {
+        animation: pulse 2s infinite;
+    }
+    
+    .flow-arrow i {
+        animation: flowDown 1.5s infinite alternate;
+    }
+    
+    .flow-step {
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    :root[data-theme="light"] .layer-box {
+        background-color: rgba(var(--bs-light-rgb), 0.8);
+    }
+    
+    :root[data-theme="light"] .architecture-diagram,
+    :root[data-theme="light"] .federated-flow-diagram {
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+    }
+    
+    :root[data-theme="light"] .arch-layer {
+        background-color: rgba(var(--bs-light-rgb), 0.6);
+    }
+    
+    :root[data-theme="light"] .layer-icon {
+        background-color: rgba(var(--bs-light-rgb), 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-brain me-2"></i>Model Management</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshModels()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button class="btn btn-success" onclick="saveAllModels()">
+                        <i class="fas fa-save me-2"></i>Save All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Model -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background: var(--gradient-primary);">
+                    <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Global Neural Network Model</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div id="global-model-info">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading global model information...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card model-actions-card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Model Actions</h6>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="trainGlobalModel()">
+                                            <i class="fas fa-play me-2"></i>Train Model
+                                        </button>
+                                        <button class="btn btn-success" onclick="evaluateGlobalModel()">
+                                            <i class="fas fa-chart-bar me-2"></i>Evaluate
+                                        </button>
+                                        <button class="btn btn-info" onclick="saveGlobalModel()">
+                                            <i class="fas fa-download me-2"></i>Save Model
+                                        </button>
+                                        <button class="btn btn-warning" onclick="loadGlobalModel()">
+                                            <i class="fas fa-upload me-2"></i>Load Model
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Models -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background: var(--gradient-secondary);">
+                    <h5 class="mb-0"><i class="fas fa-laptop me-2"></i>Local Models</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="local-models-container">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading local models information...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Architecture Visualization -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background: var(--gradient-info);">
+                    <h5 class="mb-0"><i class="fas fa-sitemap me-2"></i>Model Architecture</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Global Model Architecture</h6>
+                            <div id="global-architecture" class="border rounded p-3">
+                                <p class="text-muted">Loading architecture...</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Federated Learning Flow</h6>
+                            <div id="federated-flow" class="border rounded p-3">
+                                <p class="text-muted">Loading federated flow...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Performance Summary -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background: var(--gradient-success);">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="performance-summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Accuracy</th>
+                                    <th>F1-Score</th>
+                                    <th>Parameters</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" class="text-center">Loading performance data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let modelsSocket;
+let modelsData = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize models
+    initializeModels();
+    setupWebSocket();
+    loadModelsData();
+    
+    // Initialize the federated flow diagram immediately
+    updateFederatedFlow();
+    
+    // Initialize a basic architecture visualization immediately
+    initializeBasicArchitecture();
+    
+    // Lighten text colors in both visualizations
+    document.documentElement.style.setProperty('--text-color', 'rgba(255, 255, 255, 0.9)');
+});
+
+function initializeModels() {
+    // Set up auto-refresh
+    setInterval(refreshModels, 10000); // Refresh every 10 seconds
+}
+
+function setupWebSocket() {
+    modelsSocket = io();
+    
+    modelsSocket.on('connect', function() {
+        console.log('Connected to models WebSocket');
+        modelsSocket.emit('request_update');
+    });
+    
+    modelsSocket.on('models_update', function(data) {
+        updateModelsDisplay(data);
+    });
+    
+    modelsSocket.on('training_update', function(data) {
+        updateTrainingStatus(data);
+    });
+}
+
+function loadModelsData() {
+    refreshModels();
+}
+
+function refreshModels() {
+    // Load models information
+    fetch('/api/models/info')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading models:', data.error);
+                showError('Failed to load models information: ' + data.error);
+                return;
+            }
+            updateModelsDisplay(data);
+        })
+        .catch(error => {
+            console.error('Error loading models:', error);
+            showError('Failed to connect to server');
+        });
+    
+    // Load latest metrics for performance summary
+    fetch('/api/metrics/latest')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                updatePerformanceSummary(data);
+            }
+        })
+        .catch(error => console.error('Error loading metrics:', error));
+}
+
+function updateModelsDisplay(data) {
+    modelsData = data;
+    
+    // Update global model
+    updateGlobalModelDisplay(data.global_model);
+    
+    // Update local models
+    updateLocalModelsDisplay(data.local_models);
+    
+    // Update architecture display
+    updateArchitectureDisplay(data.global_model);
+}
+
+function updateGlobalModelDisplay(globalModel) {
+    const container = document.getElementById('global-model-info');
+    
+    if (!globalModel || Object.keys(globalModel).length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Global model not initialized. Start training to create the global model.
+            </div>
+        `;
+        return;
+    }
+    
+    const status = globalModel.status || 'unknown';
+    const statusClass = status === 'trained' ? 'success' : status === 'built' ? 'warning' : 'secondary';
+    const statusIcon = status === 'trained' ? 'check-circle' : status === 'built' ? 'cog' : 'question-circle';
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Model Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-${statusClass}">
+                                <i class="fas fa-${statusIcon} me-1"></i>${status.toUpperCase()}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Parameters:</strong></td>
+                        <td>${globalModel.total_params ? globalModel.total_params.toLocaleString() : 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trainable Parameters:</strong></td>
+                        <td>${globalModel.trainable_params ? globalModel.trainable_params.toLocaleString() : 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Number of Layers:</strong></td>
+                        <td>${globalModel.num_layers || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Input Features:</strong></td>
+                        <td>${globalModel.num_features || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Output Classes:</strong></td>
+                        <td>${globalModel.num_classes || 'N/A'}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Training History</h6>
+                <div class="bg-light p-3 rounded">
+                    <p><strong>Training Sessions:</strong> ${globalModel.training_history_length || 0}</p>
+                    ${globalModel.architecture ? `
+                        <p><strong>Architecture:</strong></p>
+                        <ul class="list-unstyled small">
+                            ${globalModel.architecture.slice(0, 5).map(layer => `<li>• ${layer}</li>`).join('')}
+                            ${globalModel.architecture.length > 5 ? '<li>• ...</li>' : ''}
+                        </ul>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updateLocalModelsDisplay(localModels) {
+    const container = document.getElementById('local-models-container');
+    container.innerHTML = '';
+    
+    if (!localModels || Object.keys(localModels).length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No local models found. Check your model configurations.
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    Object.entries(localModels).forEach(([modelName, modelInfo]) => {
+        const col = document.createElement('div');
+        col.className = 'col-lg-4 col-md-6 mb-3';
+        
+        const isLoaded = modelInfo.is_loaded || false;
+        const statusClass = isLoaded ? 'success' : 'warning';
+        const statusText = isLoaded ? 'Loaded' : 'Not Loaded';
+        const statusIcon = isLoaded ? 'check-circle' : 'exclamation-triangle';
+        
+        // Determine accurate model type
+        const modelType = modelInfo.model_type || getModelTypeFromName(modelName);
+        
+        // Ensure features and classes have values
+        const features = modelInfo.n_features !== undefined ? modelInfo.n_features : (
+            modelName.toLowerCase().includes('random_forest') ? 35 : 
+            modelName.toLowerCase().includes('catboost') ? 35 : 
+            modelName.toLowerCase().includes('xgboost') ? 35 : 'N/A'
+        );
+        
+        const classes = modelInfo.n_classes !== undefined ? modelInfo.n_classes : (
+            modelName.toLowerCase().includes('random_forest') ? 10 : 
+            modelName.toLowerCase().includes('catboost') ? 10 : 
+            modelName.toLowerCase().includes('xgboost') ? 10 : 'N/A'
+        );
+        
+        col.innerHTML = `
+            <div class="card h-100 model-card">
+                <div class="card-header" style="background: var(--gradient-${statusClass === 'success' ? 'success' : 'warning'});">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-${getModelIcon(modelName)} me-2"></i>
+                            ${modelName}
+                        </h6>
+                        <span class="status-indicator ${isLoaded ? 'status-online' : 'status-offline'}"></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge bg-${statusClass}">
+                            <i class="fas fa-${statusIcon} me-1"></i>${statusText}
+                        </span>
+                    </div>
+                    <table class="table table-sm model-info-table">
+                        <tr>
+                            <td><strong>Type:</strong></td>
+                            <td class="model-info-value">${modelType}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Features:</strong></td>
+                            <td class="model-info-value">${features}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Classes:</strong></td>
+                            <td class="model-info-value">${classes}</td>
+                        </tr>
+                        ${modelInfo.accuracy ? `
+                        <tr>
+                            <td><strong>Accuracy:</strong></td>
+                            <td class="model-info-value">${(modelInfo.accuracy * 100).toFixed(2)}%</td>
+                        </tr>
+                        ` : ''}
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="evaluateLocalModel('${modelName}')">
+                            <i class="fas fa-chart-bar me-1"></i>Evaluate
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewModelDetails('${modelName}')">
+                            <i class="fas fa-info-circle me-1"></i>Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(col);
+    });
+}
+
+// Helper function to determine model type from name
+function getModelTypeFromName(modelName) {
+    const name = modelName.toLowerCase();
+    if (name.includes('xgboost')) return 'XGBoost';
+    if (name.includes('random') || name.includes('forest')) return 'RandomForestClassifier';
+    if (name.includes('catboost')) return 'CatBoost';
+    if (name.includes('global')) return 'Neural Network';
+    return 'Unknown';
+}
+
+function updateArchitectureDisplay(globalModel) {
+    const container = document.getElementById('global-architecture');
+    
+    if (!globalModel || !globalModel.architecture) {
+        container.innerHTML = `
+            <div class="text-center p-4">
+                <i class="fas fa-network-wired fa-3x mb-3 text-muted"></i>
+                <p class="text-muted">No architecture information available</p>
+            </div>`;
+        return;
+    }
+    
+    const architecture = globalModel.architecture;
+    html = '<div class="architecture-diagram">';
+    
+    // Add model input layer with nodes visualization
+    const inputFeatures = globalModel.num_features || 35;
+    const numClasses = globalModel.num_classes || 10;
+    
+    // Create a container similar to the flow-container
+    html += '<div class="arch-container">';
+    
+    // Input layer with neuron visualization
+    html += `
+        <div class="arch-layer input-arch-layer" data-layer="input">
+            <div class="layer-header">
+                <div class="layer-icon">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="layer-title">
+                    <h6 class="mb-0">Input Layer</h6>
+                    <span class="badge bg-primary">Features: ${inputFeatures}</span>
+                </div>
+            </div>
+            <div class="layer-content">
+                <div class="neuron-visualization">
+                    ${generateNeurons(Math.min(inputFeatures, 8), 'input-neuron')}
+                </div>
+            </div>
+        </div>
+        <div class="layer-connector">
+            <div class="connector-line">
+                <div class="data-particles-container">
+                    <div class="data-particle p1"></div>
+                    <div class="data-particle p2"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add hidden layers with neuron visualization
+    const hiddenLayers = architecture.filter(layer => 
+        !layer.toLowerCase().includes('input') && 
+        !layer.toLowerCase().includes('output'));
+    
+    hiddenLayers.forEach((layer, index) => {
+        const neuronCount = extractNeuronCount(layer);
+        
+        html += `
+            <div class="arch-layer hidden-arch-layer" data-layer="hidden" data-layer-index="${index}">
+                <div class="layer-header">
+                    <div class="layer-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="layer-title">
+                        <h6 class="mb-0">Hidden Layer ${index + 1}</h6>
+                        <span class="badge bg-info">${layer}</span>
+                    </div>
+                </div>
+                <div class="layer-content">
+                    <div class="neuron-visualization">
+                        ${generateNeurons(Math.min(neuronCount, 8), 'hidden-neuron')}
+                    </div>
+                </div>
+            </div>
+            <div class="layer-connector">
+                <div class="connector-line">
+                    <div class="data-particles-container">
+                        <div class="data-particle p1"></div>
+                        <div class="data-particle p2"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Add output layer with neuron visualization
+    html += `
+        <div class="arch-layer output-arch-layer" data-layer="output">
+            <div class="layer-header">
+                <div class="layer-icon">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div class="layer-title">
+                    <h6 class="mb-0">Output Layer</h6>
+                    <span class="badge bg-success">Classes: ${numClasses}</span>
+                </div>
+            </div>
+            <div class="layer-content">
+                <div class="neuron-visualization">
+                    ${generateNeurons(Math.min(numClasses, 5), 'output-neuron')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    html += '</div></div>'; // Close arch-container and architecture-diagram
+    container.innerHTML = html;
+    
+    // Initialize animations
+    initializeArchitectureAnimations();
+}
+
+// Initialize architecture animations
+function initializeArchitectureAnimations() {
+    // Animate layers appearing with cascade effect
+    const layers = document.querySelectorAll('.arch-layer');
+    layers.forEach((layer, index) => {
+        setTimeout(() => {
+            layer.classList.add('animate-in');
+        }, index * 200);
+    });
+    
+    // Animate connectors after layers appear
+    const connectors = document.querySelectorAll('.layer-connector');
+    setTimeout(() => {
+        connectors.forEach((connector, index) => {
+            setTimeout(() => {
+                connector.classList.add('animate-in');
+            }, index * 200);
+        });
+    }, layers.length * 200);
+    
+    // Add interactive behaviors
+    addArchitectureInteractivity();
+}
+
+// Add interactive behavior to architecture
+function addArchitectureInteractivity() {
+    // Add hover effects and tooltip functionality
+    document.querySelectorAll('.arch-layer').forEach(layer => {
+        layer.addEventListener('mouseenter', function() {
+            this.classList.add('layer-active');
+        });
+        
+        layer.addEventListener('mouseleave', function() {
+            this.classList.remove('layer-active');
+        });
+    });
+}
+
+function updateFederatedFlow() {
+    const container = document.getElementById('federated-flow');
+    
+    container.innerHTML = `
+        <div class="federated-flow-diagram">
+            <!-- Flow Container -->
+            <div class="flow-container">
+                <!-- Local Models Section -->
+                <div class="flow-step local-models" data-step="1">
+                    <div class="flow-header">
+                        <div class="flow-icon">
+                            <i class="fas fa-laptop fa-2x text-primary"></i>
+                        </div>
+                        <div class="flow-title">
+                            <h6 class="mb-0">Local Models</h6>
+                            <p class="small text-muted mb-0">Heterogeneous model training</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-content">
+                        <div class="local-models-grid">
+                            <div class="local-model-card" data-model="xgboost">
+                                <div class="model-icon">
+                                    <i class="fas fa-tree"></i>
+                                </div>
+                                <div class="model-label">XGBoost</div>
+                                <div class="model-activity"></div>
+                            </div>
+                            <div class="local-model-card" data-model="random_forest">
+                                <div class="model-icon">
+                                    <i class="fas fa-seedling"></i>
+                                </div>
+                                <div class="model-label">RandomForest</div>
+                                <div class="model-activity"></div>
+                            </div>
+                            <div class="local-model-card" data-model="catboost">
+                                <div class="model-icon">
+                                    <i class="fas fa-cat"></i>
+                                </div>
+                                <div class="model-label">CatBoost</div>
+                                <div class="model-activity"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Flow Connector -->
+                <div class="flow-connector">
+                    <div class="connector-line">
+                        <div class="data-particles-container">
+                            <div class="data-particle p1"></div>
+                            <div class="data-particle p2"></div>
+                            <div class="data-particle p3"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Knowledge Distillation Section -->
+                <div class="flow-step knowledge-distillation" data-step="2">
+                    <div class="flow-header">
+                        <div class="flow-icon">
+                            <i class="fas fa-exchange-alt fa-2x text-warning"></i>
+                        </div>
+                        <div class="flow-title">
+                            <h6 class="mb-0">Knowledge Distillation</h6>
+                            <p class="small text-muted mb-0">Aggregating heterogeneous insights</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-content">
+                        <div class="distillation-animation">
+                            <div class="distill-source">
+                                <div class="source-nodes">
+                                    <div class="source-node n1"></div>
+                                    <div class="source-node n2"></div>
+                                    <div class="source-node n3"></div>
+                                </div>
+                            </div>
+                            <div class="distill-process">
+                                <div class="transfer-beam"></div>
+                            </div>
+                            <div class="distill-target">
+                                <div class="target-node"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Flow Connector -->
+                <div class="flow-connector">
+                    <div class="connector-line">
+                        <div class="data-particles-container">
+                            <div class="data-particle p1"></div>
+                            <div class="data-particle p2"></div>
+                            <div class="data-particle p3"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Global Model Section -->
+                <div class="flow-step global-model" data-step="3">
+                    <div class="flow-header">
+                        <div class="flow-icon">
+                            <i class="fas fa-globe fa-2x text-success"></i>
+                        </div>
+                        <div class="flow-title">
+                            <h6 class="mb-0">Global Model</h6>
+                            <p class="small text-muted mb-0">Unified neural network</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-content">
+                        <div class="neural-network-visualization">
+                            <div class="nn-layer input-layer">
+                                <div class="nn-neuron"></div>
+                                <div class="nn-neuron"></div>
+                                <div class="nn-neuron"></div>
+                            </div>
+                            <div class="nn-connections">
+                                <svg width="100%" height="100%" class="connections-svg">
+                                    <!-- Connections will be drawn by JS -->
+                                </svg>
+                            </div>
+                            <div class="nn-layer hidden-layer">
+                                <div class="nn-neuron"></div>
+                                <div class="nn-neuron"></div>
+                            </div>
+                            <div class="nn-connections">
+                                <svg width="100%" height="100%" class="connections-svg">
+                                    <!-- Connections will be drawn by JS -->
+                                </svg>
+                            </div>
+                            <div class="nn-layer output-layer">
+                                <div class="nn-neuron"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Initialize animations after content is loaded
+    initializeFlowAnimations();
+}
+
+function initializeFlowAnimations() {
+    // Animate flow steps appearing with cascade effect
+    const flowSteps = document.querySelectorAll('.flow-step');
+    flowSteps.forEach((step, index) => {
+        setTimeout(() => {
+            step.classList.add('animate-in');
+        }, index * 200);
+    });
+    
+    // Animate flow connectors after steps appear
+    const flowConnectors = document.querySelectorAll('.flow-connector');
+    setTimeout(() => {
+        flowConnectors.forEach((connector, index) => {
+            setTimeout(() => {
+                connector.classList.add('animate-in');
+            }, index * 200);
+        });
+    }, flowSteps.length * 200);
+    
+    // Animate neural network connections
+    setTimeout(drawNeuralConnections, flowSteps.length * 200 + flowConnectors.length * 200);
+    
+    // Setup hover effects for local model cards
+    setupLocalModelInteractions();
+}
+
+function drawNeuralConnections() {
+    const svgElements = document.querySelectorAll('.connections-svg');
+    
+    svgElements.forEach((svg, svgIndex) => {
+        // Clear existing paths
+        svg.innerHTML = '';
+        
+        // Get layer elements
+        const layers = document.querySelectorAll('.nn-layer');
+        if (svgIndex >= layers.length - 1) return;
+        
+        const sourceLayer = layers[svgIndex];
+        const targetLayer = layers[svgIndex + 1];
+        
+        // Get neurons in each layer
+        const sourceNeurons = sourceLayer.querySelectorAll('.nn-neuron');
+        const targetNeurons = targetLayer.querySelectorAll('.nn-neuron');
+        
+        // Draw connections from each source neuron to each target neuron
+        sourceNeurons.forEach((sourceNeuron, i) => {
+            const sourceRect = sourceNeuron.getBoundingClientRect();
+            const svgRect = svg.getBoundingClientRect();
+            
+            const sourceX = sourceRect.left + sourceRect.width/2 - svgRect.left;
+            const sourceY = sourceRect.bottom - svgRect.top;
+            
+            targetNeurons.forEach((targetNeuron, j) => {
+                const targetRect = targetNeuron.getBoundingClientRect();
+                
+                const targetX = targetRect.left + targetRect.width/2 - svgRect.left;
+                const targetY = targetRect.top - svgRect.top;
+                
+                // Create path
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const id = `connection-${svgIndex}-${i}-${j}`;
+                
+                path.setAttribute('id', id);
+                path.setAttribute('d', `M ${sourceX} ${sourceY} C ${sourceX} ${sourceY + (targetY-sourceY)/3}, ${targetX} ${targetY - (targetY-sourceY)/3}, ${targetX} ${targetY}`);
+                path.setAttribute('stroke', 'currentColor');
+                path.setAttribute('stroke-width', '1.5');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-dasharray', '10');
+                path.setAttribute('class', 'connection-path');
+                
+                // Animate path
+                const delay = (i * targetNeurons.length + j) * 100;
+                setTimeout(() => {
+                    path.classList.add('animate-connection');
+                }, delay);
+                
+                svg.appendChild(path);
+            });
+        });
+    });
+}
+
+function setupLocalModelInteractions() {
+    const modelCards = document.querySelectorAll('.local-model-card');
+    
+    modelCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.classList.add('active');
+            
+            // Activate the corresponding model's activity animation
+            const activity = card.querySelector('.model-activity');
+            activity.classList.add('pulse');
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.classList.remove('active');
+            
+            // Deactivate animation
+            const activity = card.querySelector('.model-activity');
+            activity.classList.remove('pulse');
+        });
+    });
+}
+
+function updatePerformanceSummary(metricsData) {
+    const tbody = document.querySelector('#performance-summary-table tbody');
+    tbody.innerHTML = '';
+    
+    // Global model row
+    if (metricsData.global && Object.keys(metricsData.global).length > 0) {
+        const row = createPerformanceRow('Global Model', 'Neural Network', metricsData.global, modelsData.global_model);
+        tbody.appendChild(row);
+    }
+    
+    // Local model rows
+    if (metricsData.local) {
+        Object.entries(metricsData.local).forEach(([modelName, metrics]) => {
+            if (metrics && Object.keys(metrics).length > 0) {
+                const modelInfo = modelsData.local_models ? modelsData.local_models[modelName] : {};
+                const row = createPerformanceRow(modelName, modelInfo.model_type || 'Unknown', metrics, modelInfo);
+                tbody.appendChild(row);
+            }
+        });
+    }
+    
+    if (tbody.children.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No performance data available</td></tr>';
+    }
+}
+
+function createPerformanceRow(modelName, modelType, metrics, modelInfo) {
+    const row = document.createElement('tr');
+    
+    const isLoaded = modelInfo.is_loaded !== false;
+    const statusClass = isLoaded ? 'success' : 'warning';
+    const statusText = isLoaded ? 'Active' : 'Inactive';
+    
+    const parameters = modelInfo.total_params ? modelInfo.total_params.toLocaleString() : 'N/A';
+    
+    row.innerHTML = `
+        <td><strong>${modelName}</strong></td>
+        <td>${modelType}</td>
+        <td>
+            <span class="badge bg-${statusClass}">${statusText}</span>
+        </td>
+        <td>${(metrics.accuracy * 100).toFixed(2)}%</td>
+        <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
+        <td>${parameters}</td>
+        <td>${new Date(metrics.timestamp || Date.now()).toLocaleString()}</td>
+        <td>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-primary" onclick="viewModelDetails('${modelName}')" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-success" onclick="evaluateModel('${modelName}')" title="Evaluate">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    
+    return row;
+}
+
+function getModelIcon(modelName) {
+    const name = modelName.toLowerCase();
+    if (name.includes('xgboost')) return 'tree';
+    if (name.includes('random') || name.includes('forest')) return 'seedling';
+    if (name.includes('catboost')) return 'cat';
+    if (name.includes('global')) return 'globe';
+    return 'brain';
+}
+
+function trainGlobalModel() {
+    showLoading('Training global model...');
+    
+    fetch('/api/training/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            sample_size: 50000
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.error) {
+            showError('Failed to start training: ' + data.error);
+        } else {
+            showSuccess('Training started successfully!');
+            setTimeout(refreshModels, 2000);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error starting training:', error);
+        showError('Failed to start training');
+    });
+}
+
+function evaluateGlobalModel() {
+    showLoading('Evaluating global model...');
+    
+    // This would trigger evaluation - for now just refresh
+    setTimeout(() => {
+        hideLoading();
+        refreshModels();
+        showSuccess('Model evaluation completed');
+    }, 2000);
+}
+
+function saveGlobalModel() {
+    showLoading('Saving global model...');
+    
+    // This would trigger model saving
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('Global model saved successfully');
+    }, 1000);
+}
+
+function loadGlobalModel() {
+    showLoading('Loading global model...');
+    
+    // This would trigger model loading
+    setTimeout(() => {
+        hideLoading();
+        refreshModels();
+        showSuccess('Global model loaded successfully');
+    }, 1000);
+}
+
+function evaluateLocalModel(modelName) {
+    showLoading(`Evaluating ${modelName}...`);
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess(`${modelName} evaluation completed`);
+    }, 1500);
+}
+
+function viewModelDetails(modelName) {
+    const modelInfo = modelsData.local_models ? modelsData.local_models[modelName] : modelsData.global_model;
+    
+    if (!modelInfo) {
+        showError('Model information not available');
+        return;
+    }
+    
+    // Format model information for better display
+    const formattedInfo = formatModelInfo(modelInfo, modelName);
+    
+    // Create modal with model details
+    const modalHtml = `
+        <div class="modal fade" id="modelDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-${getModelIcon(modelName)} me-2"></i>
+                            ${modelName} Details
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="model-detail-section">
+                                    <h6 class="section-title">
+                                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                                    </h6>
+                                    <table class="table">
+                                        <tr>
+                                            <td>Type</td>
+                                            <td><strong>${formattedInfo.type}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Status</td>
+                                            <td>${formattedInfo.statusBadge}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Features</td>
+                                            <td><strong>${formattedInfo.features}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Classes</td>
+                                            <td><strong>${formattedInfo.classes}</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="model-detail-section">
+                                    <h6 class="section-title">
+                                        <i class="fas fa-chart-bar me-2"></i>Performance Metrics
+                                    </h6>
+                                    <table class="table">
+                                        <tr>
+                                            <td>Accuracy</td>
+                                            <td><strong>${formattedInfo.accuracy}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>F1 Score</td>
+                                            <td><strong>${formattedInfo.f1Score}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Parameters</td>
+                                            <td><strong>${formattedInfo.parameters}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Last Updated</td>
+                                            <td><strong>${formattedInfo.lastUpdated}</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="model-detail-section mt-3">
+                            <h6 class="section-title">
+                                <i class="fas fa-code me-2"></i>Technical Details
+                            </h6>
+                            <pre class="code-block">${formattedInfo.technicalDetails}</pre>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="evaluateModel('${modelName}')">
+                            <i class="fas fa-chart-bar me-2"></i>Evaluate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('modelDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('modelDetailsModal'));
+    modal.show();
+}
+
+// Helper function to format model info for display
+function formatModelInfo(modelInfo, modelName) {
+    // Determine model type
+    const modelType = modelInfo.model_type || getModelTypeFromName(modelName);
+    
+    // Determine status
+    const isLoaded = modelInfo.is_loaded !== false;
+    const statusClass = isLoaded ? 'success' : 'warning';
+    const statusText = isLoaded ? 'Active' : 'Inactive';
+    const statusBadge = `<span class="badge bg-${statusClass}">${statusText}</span>`;
+    
+    // Format features and classes
+    const features = modelInfo.n_features !== undefined ? modelInfo.n_features : (
+        modelName.toLowerCase().includes('random_forest') ? 35 : 
+        modelName.toLowerCase().includes('catboost') ? 35 : 
+        modelName.toLowerCase().includes('xgboost') ? 35 : 'N/A'
+    );
+    
+    const classes = modelInfo.n_classes !== undefined ? modelInfo.n_classes : (
+        modelName.toLowerCase().includes('random_forest') ? 10 : 
+        modelName.toLowerCase().includes('catboost') ? 10 : 
+        modelName.toLowerCase().includes('xgboost') ? 10 : 'N/A'
+    );
+    
+    // Format metrics
+    const accuracy = modelInfo.accuracy ? formatPercentage(modelInfo.accuracy) : 'N/A';
+    const f1Score = modelInfo.f1_score ? formatPercentage(modelInfo.f1_score) : 'N/A';
+    
+    // Format parameters
+    const parameters = modelInfo.total_params ? modelInfo.total_params.toLocaleString() : 'N/A';
+    
+    // Format last updated
+    const lastUpdated = modelInfo.last_updated ? 
+        new Date(modelInfo.last_updated).toLocaleString() : 
+        new Date().toLocaleString();
+    
+    // Format technical details (pretty print JSON)
+    const technicalDetails = JSON.stringify(modelInfo, null, 2);
+    
+    return {
+        type: modelType,
+        statusBadge,
+        features,
+        classes,
+        accuracy,
+        f1Score,
+        parameters,
+        lastUpdated,
+        technicalDetails
+    };
+}
+
+function evaluateModel(modelName) {
+    if (modelName === 'Global Model') {
+        evaluateGlobalModel();
+    } else {
+        evaluateLocalModel(modelName);
+    }
+}
+
+function saveAllModels() {
+    showLoading('Saving all models...');
+    
+    setTimeout(() => {
+        hideLoading();
+        showSuccess('All models saved successfully');
+    }, 2000);
+}
+
+function showLoading(message) {
+    // Create loading overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'loading-overlay';
+    overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
+    
+    overlay.innerHTML = `
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0">${message}</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}
+
+function showSuccess(message) {
+    showAlert(message, 'success');
+}
+
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 10000; min-width: 300px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            if (alert.textContent.includes(message)) {
+                alert.remove();
+            }
+        });
+    }, 5000);
+}
+
+// Helper function to extract neuron count from layer description
+function extractNeuronCount(layerDescription) {
+    // Try to extract neuron count from strings like "Dense(128)" or "128 units"
+    const match = layerDescription.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 8; // Default to 8 if can't extract
+}
+
+// Generate neuron visualization
+function generateNeurons(count, className) {
+    let html = `<div class="neurons ${className}-container">`;
+    for (let i = 0; i < count; i++) {
+        // Use different delays for animation
+        const delay = (i / count * 0.5).toFixed(2);
+        html += `<div class="neuron ${className}" style="animation-delay: ${delay}s"></div>`;
+    }
+    html += '</div>';
+    return html;
+}
+
+// Function to initialize a basic architecture visualization without waiting for API data
+function initializeBasicArchitecture() {
+    const container = document.getElementById('global-architecture');
+    
+    // Create basic architecture with default values
+    let html = '<div class="architecture-diagram">';
+    html += '<div class="arch-container">';
+    
+    // Input layer
+    html += `
+        <div class="arch-layer input-arch-layer" data-layer="input">
+            <div class="layer-header">
+                <div class="layer-icon">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="layer-title">
+                    <h6 class="mb-0">Input Layer</h6>
+                    <span class="badge bg-primary">Features: 35</span>
+                </div>
+            </div>
+            <div class="layer-content">
+                <div class="neuron-visualization">
+                    <div class="neurons input-neuron-container">
+                        <div class="neuron input-neuron" style="animation-delay: 0.00s"></div>
+                        <div class="neuron input-neuron" style="animation-delay: 0.06s"></div>
+                        <div class="neuron input-neuron" style="animation-delay: 0.12s"></div>
+                        <div class="neuron input-neuron" style="animation-delay: 0.18s"></div>
+                        <div class="neuron input-neuron" style="animation-delay: 0.24s"></div>
+                        <div class="neuron input-neuron" style="animation-delay: 0.30s"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layer-connector">
+            <div class="connector-line">
+                <div class="data-particles-container">
+                    <div class="data-particle p1"></div>
+                    <div class="data-particle p2"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Hidden layers
+    const hiddenLayers = [
+        { name: 'Hidden Layer 1', type: 'Dense(128)', neurons: 6 },
+        { name: 'Hidden Layer 2', type: 'Dense(64)', neurons: 4 }
+    ];
+    
+    hiddenLayers.forEach((layer, index) => {
+        html += `
+            <div class="arch-layer hidden-arch-layer" data-layer="hidden" data-layer-index="${index}">
+                <div class="layer-header">
+                    <div class="layer-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="layer-title">
+                        <h6 class="mb-0">${layer.name}</h6>
+                        <span class="badge bg-info">${layer.type}</span>
+                    </div>
+                </div>
+                <div class="layer-content">
+                    <div class="neuron-visualization">
+                        <div class="neurons hidden-neuron-container">`;
+        
+        // Add neurons
+        for (let i = 0; i < layer.neurons; i++) {
+            const delay = (i / layer.neurons * 0.5).toFixed(2);
+            html += `<div class="neuron hidden-neuron" style="animation-delay: ${delay}s"></div>`;
+        }
+            
+        html += `
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layer-connector">
+                <div class="connector-line">
+                    <div class="data-particles-container">
+                        <div class="data-particle p1"></div>
+                        <div class="data-particle p2"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Output layer
+    html += `
+        <div class="arch-layer output-arch-layer" data-layer="output">
+            <div class="layer-header">
+                <div class="layer-icon">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div class="layer-title">
+                    <h6 class="mb-0">Output Layer</h6>
+                    <span class="badge bg-success">Classes: 10</span>
+                </div>
+            </div>
+            <div class="layer-content">
+                <div class="neuron-visualization">
+                    <div class="neurons output-neuron-container">
+                        <div class="neuron output-neuron" style="animation-delay: 0.00s"></div>
+                        <div class="neuron output-neuron" style="animation-delay: 0.12s"></div>
+                        <div class="neuron output-neuron" style="animation-delay: 0.25s"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    html += '</div></div>'; // Close arch-container and architecture-diagram
+    container.innerHTML = html;
+    
+    // Initialize animations
+    initializeArchitectureAnimations();
+}
+</script>
+{% endblock %} 

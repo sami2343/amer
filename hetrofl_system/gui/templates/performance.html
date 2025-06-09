@@ -1,0 +1,1335 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Analytics - HETROFL System{% endblock %}
+{% block page_title %}Performance Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Performance Analytics specific styles */
+    .performance-card {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    .performance-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        padding: 1rem;
+    }
+    
+    .chart-container.large {
+        height: 500px;
+    }
+    
+    .chart-container.small {
+        height: 300px;
+    }
+    
+    .metrics-table-container {
+        max-height: 500px;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+    }
+    
+    .performance-metric:hover {
+        background-color: var(--card-bg-hover);
+    }
+    
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    
+    .metric-name {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .metric-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .metric-improvement {
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .improvement-positive {
+        background-color: var(--success-color);
+        color: white;
+    }
+    
+    .improvement-negative {
+        background-color: var(--danger-color);
+        color: white;
+    }
+    
+    .improvement-neutral {
+        background-color: var(--text-muted);
+        color: white;
+    }
+    
+    .model-comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .model-card {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .model-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .model-card.global {
+        border-left-color: var(--primary-color);
+    }
+    
+    .model-card.xgboost {
+        border-left-color: var(--success-color);
+    }
+    
+    .model-card.random_forest {
+        border-left-color: var(--warning-color);
+    }
+    
+    .model-card.catboost {
+        border-left-color: var(--info-color);
+    }
+    
+    .model-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+    
+    .model-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .model-metric {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+    }
+    
+    .model-metric-label {
+        color: var(--text-muted);
+    }
+    
+    .model-metric-value {
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        border-radius: 0.75rem;
+        z-index: 10;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .refresh-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 5;
+    }
+    
+    .refresh-indicator.active {
+        opacity: 1;
+    }
+    
+    .performance-summary {
+        background: var(--gradient-primary);
+        color: white;
+        padding: 2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .summary-stat {
+        text-align: center;
+    }
+    
+    .summary-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .summary-stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .filter-controls {
+        background: var(--card-bg);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filter-group label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    .filter-group select {
+        min-width: 120px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .model-comparison-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .summary-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .chart-container {
+            height: 300px;
+        }
+        
+        .chart-container.large {
+            height: 350px;
+        }
+        
+        .filter-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-group {
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Performance Summary -->
+<div class="performance-summary">
+    <h2 class="mb-3">System Performance Overview</h2>
+    <p class="mb-0">Real-time analytics and comprehensive performance metrics for all federated learning models</p>
+    
+    <div class="summary-stats">
+        <div class="summary-stat">
+            <div class="summary-stat-value" id="total-rounds">0</div>
+            <div class="summary-stat-label">Training Rounds</div>
+        </div>
+        <div class="summary-stat">
+            <div class="summary-stat-value" id="best-accuracy">0.0%</div>
+            <div class="summary-stat-label">Best Accuracy</div>
+        </div>
+        <div class="summary-stat">
+            <div class="summary-stat-value" id="avg-training-time">0s</div>
+            <div class="summary-stat-label">Avg Training Time</div>
+        </div>
+        <div class="summary-stat">
+            <div class="summary-stat-value" id="active-models">0</div>
+            <div class="summary-stat-label">Active Models</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Controls -->
+<div class="filter-controls">
+    <div class="filter-group">
+        <label for="metric-filter">Metric:</label>
+        <select id="metric-filter" class="form-select form-select-sm">
+            <option value="accuracy">Accuracy</option>
+            <option value="f1_score">F1 Score</option>
+            <option value="precision">Precision</option>
+            <option value="recall">Recall</option>
+            <option value="loss">Loss</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="rounds-filter">Rounds:</label>
+        <select id="rounds-filter" class="form-select form-select-sm">
+            <option value="all">All Rounds</option>
+            <option value="last10">Last 10</option>
+            <option value="last20">Last 20</option>
+            <option value="last50">Last 50</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="model-filter">Models:</label>
+        <select id="model-filter" class="form-select form-select-sm">
+            <option value="all">All Models</option>
+            <option value="global">Global Only</option>
+            <option value="local">Local Only</option>
+        </select>
+    </div>
+    <button class="btn btn-primary btn-sm" id="apply-filters">
+        <i class="fas fa-filter"></i> Apply Filters
+    </button>
+    <button class="btn btn-outline-light btn-sm" id="reset-filters">
+        <i class="fas fa-undo"></i> Reset
+    </button>
+</div>
+
+<!-- Model Comparison Cards -->
+<div class="model-comparison-grid" id="model-comparison">
+    <!-- Model cards will be dynamically populated -->
+</div>
+
+<!-- Main Charts Grid -->
+<div class="row">
+    <!-- Training Progress Chart -->
+    <div class="col-lg-8 col-md-12 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-chart-line"></i>
+                Training Progress Over Time
+                <div class="refresh-indicator" id="progress-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="chart-container large" id="training-progress-chart">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading training progress...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Model Comparison Chart -->
+    <div class="col-lg-4 col-md-12 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar"></i>
+                Latest Model Performance
+                <div class="refresh-indicator" id="comparison-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="chart-container" id="model-comparison-chart">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading model comparison...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Loss Convergence Chart -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-chart-area"></i>
+                Loss Convergence
+                <div class="refresh-indicator" id="loss-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="chart-container" id="loss-convergence-chart">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading loss convergence...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Training Time Analysis -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-clock"></i>
+                Training Time Analysis
+                <div class="refresh-indicator" id="time-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="chart-container" id="training-time-chart">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading training time analysis...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Improvement Heatmap -->
+    <div class="col-lg-8 col-md-12 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-th"></i>
+                Performance Improvement Heatmap
+                <div class="refresh-indicator" id="heatmap-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="chart-container" id="improvement-heatmap">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div>Loading improvement heatmap...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance Trends Table -->
+    <div class="col-lg-4 col-md-12 mb-4">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-table"></i>
+                Performance Trends
+                <div class="refresh-indicator" id="table-refresh">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="metrics-table-container" id="performance-trends-table">
+                    <div class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                        <div>Loading performance trends...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="performance-card">
+            <div class="card-header">
+                <i class="fas fa-list-alt"></i>
+                Detailed Metrics History
+                <div class="float-end">
+                    <button class="btn btn-sm btn-outline-light" id="export-data">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" id="refresh-table">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="detailed-metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Model</th>
+                                <th>Accuracy</th>
+                                <th>F1 Score</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>Loss</th>
+                                <th>Training Time</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailed-metrics-tbody">
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="loading-spinner mx-auto mb-2"></div>
+                                    Loading detailed metrics...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Performance Analytics JavaScript
+class PerformanceAnalytics {
+    constructor() {
+        this.metricsData = null;
+        this.latestMetrics = null;
+        this.improvements = null;
+        this.currentFilters = {
+            metric: 'accuracy',
+            rounds: 'all',
+            models: 'all'
+        };
+        this.charts = {};
+        this.refreshInterval = null;
+        this.isLoading = false;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.loadInitialData();
+        this.startAutoRefresh();
+    }
+    
+    setupEventListeners() {
+        // Filter controls
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            this.applyFilters();
+        });
+        
+        document.getElementById('reset-filters').addEventListener('click', () => {
+            this.resetFilters();
+        });
+        
+        // Export functionality
+        document.getElementById('export-data').addEventListener('click', () => {
+            this.exportData();
+        });
+        
+        // Manual refresh
+        document.getElementById('refresh-table').addEventListener('click', () => {
+            this.refreshData();
+        });
+        
+        // Socket events for real-time updates
+        socket.on('metrics_update', (data) => {
+            this.handleMetricsUpdate(data);
+        });
+        
+        socket.on('status_update', (data) => {
+            this.handleStatusUpdate(data);
+        });
+    }
+    
+    async loadInitialData() {
+        this.showLoadingState();
+        
+        try {
+            // Load all required data
+            await Promise.all([
+                this.loadMetricsHistory(),
+                this.loadLatestMetrics(),
+                this.loadImprovements()
+            ]);
+            
+            // Initialize all visualizations
+            this.initializeCharts();
+            this.updateModelComparison();
+            this.updatePerformanceSummary();
+            this.updateDetailedTable();
+            
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            showAlert('Error loading performance data: ' + error.message, 'danger');
+        } finally {
+            this.hideLoadingState();
+        }
+    }
+    
+    async loadMetricsHistory() {
+        try {
+            const response = await fetch('/api/metrics/history');
+            if (!response.ok) throw new Error('Failed to fetch metrics history');
+            this.metricsData = await response.json();
+        } catch (error) {
+            console.error('Error loading metrics history:', error);
+            throw error;
+        }
+    }
+    
+    async loadLatestMetrics() {
+        try {
+            const response = await fetch('/api/metrics/latest');
+            if (!response.ok) throw new Error('Failed to fetch latest metrics');
+            this.latestMetrics = await response.json();
+        } catch (error) {
+            console.error('Error loading latest metrics:', error);
+            throw error;
+        }
+    }
+    
+    async loadImprovements() {
+        try {
+            const response = await fetch('/api/metrics/improvements');
+            if (!response.ok) throw new Error('Failed to fetch improvements');
+            this.improvements = await response.json();
+        } catch (error) {
+            console.error('Error loading improvements:', error);
+            throw error;
+        }
+    }
+    
+    initializeCharts() {
+        this.createTrainingProgressChart();
+        this.createModelComparisonChart();
+        this.createLossConvergenceChart();
+        this.createTrainingTimeChart();
+        this.createImprovementHeatmap();
+    }
+    
+    createTrainingProgressChart() {
+        const container = document.getElementById('training-progress-chart');
+        this.removeLoadingOverlay(container);
+        
+        if (!this.metricsData || !this.metricsData.global) {
+            this.showNoDataMessage(container, 'No training progress data available');
+            return;
+        }
+        
+        const globalData = this.metricsData.global;
+        const localData = this.metricsData.local || {};
+        
+        const traces = [];
+        
+        // Global model trace
+        if (globalData.length > 0) {
+            traces.push({
+                x: globalData.map(d => d.round),
+                y: globalData.map(d => d[this.currentFilters.metric]),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Global MLP',
+                line: { color: '#4361ee', width: 3 },
+                marker: { size: 8 }
+            });
+        }
+        
+        // Local model traces
+        const colors = {
+            'xgboost': '#05c46b',
+            'random_forest': '#ffa801',
+            'catboost': '#3dc7ff'
+        };
+        
+        Object.entries(localData).forEach(([modelName, data]) => {
+            if (data && data.length > 0 && modelName !== 'system') {
+                traces.push({
+                    x: data.map(d => d.round),
+                    y: data.map(d => d[this.currentFilters.metric]),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: modelName.replace('_', ' ').toUpperCase(),
+                    line: { color: colors[modelName] || '#6c757d', width: 2 },
+                    marker: { size: 6 }
+                });
+            }
+        });
+        
+        const layout = {
+            title: `${this.currentFilters.metric.replace('_', ' ').toUpperCase()} Progress Over Training Rounds`,
+            xaxis: { title: 'Training Round' },
+            yaxis: { title: this.currentFilters.metric.replace('_', ' ').toUpperCase() },
+            autosize: true,
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' },
+            margin: { l: 60, r: 20, t: 60, b: 60 },
+            legend: { orientation: 'h', y: -0.2 }
+        };
+        
+        Plotly.newPlot(container, traces, layout, { responsive: true, displayModeBar: false });
+        this.charts.trainingProgress = container;
+    }
+    
+    createModelComparisonChart() {
+        const container = document.getElementById('model-comparison-chart');
+        this.removeLoadingOverlay(container);
+        
+        if (!this.latestMetrics) {
+            this.showNoDataMessage(container, 'No latest metrics available');
+            return;
+        }
+        
+        const models = [];
+        const values = [];
+        const colors = [];
+        
+        // Global model
+        if (this.latestMetrics.global && this.latestMetrics.global[this.currentFilters.metric] !== undefined) {
+            models.push('Global MLP');
+            values.push(this.latestMetrics.global[this.currentFilters.metric]);
+            colors.push('#4361ee');
+        }
+        
+        // Local models
+        const localColors = {
+            'xgboost': '#05c46b',
+            'random_forest': '#ffa801',
+            'catboost': '#3dc7ff'
+        };
+        
+        if (this.latestMetrics.local) {
+            Object.entries(this.latestMetrics.local).forEach(([modelName, metrics]) => {
+                if (metrics && metrics[this.currentFilters.metric] !== undefined) {
+                    models.push(modelName.replace('_', ' ').toUpperCase());
+                    values.push(metrics[this.currentFilters.metric]);
+                    colors.push(localColors[modelName] || '#6c757d');
+                }
+            });
+        }
+        
+        const trace = {
+            x: models,
+            y: values,
+            type: 'bar',
+            marker: { color: colors },
+            text: values.map(v => (v * 100).toFixed(1) + '%'),
+            textposition: 'auto'
+        };
+        
+        const layout = {
+            title: `Latest ${this.currentFilters.metric.replace('_', ' ').toUpperCase()}`,
+            xaxis: { title: 'Model' },
+            yaxis: { title: this.currentFilters.metric.replace('_', ' ').toUpperCase() },
+            autosize: true,
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' },
+            margin: { l: 60, r: 20, t: 60, b: 60 }
+        };
+        
+        Plotly.newPlot(container, [trace], layout, { responsive: true, displayModeBar: false });
+        this.charts.modelComparison = container;
+    }
+    
+    createLossConvergenceChart() {
+        const container = document.getElementById('loss-convergence-chart');
+        this.removeLoadingOverlay(container);
+        
+        if (!this.metricsData || !this.metricsData.global) {
+            this.showNoDataMessage(container, 'No loss data available');
+            return;
+        }
+        
+        const globalData = this.metricsData.global;
+        const localData = this.metricsData.local || {};
+        
+        const traces = [];
+        
+        // Global model loss
+        if (globalData.length > 0) {
+            traces.push({
+                x: globalData.map(d => d.round),
+                y: globalData.map(d => d.loss),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Global MLP',
+                line: { color: '#4361ee', width: 3 },
+                marker: { size: 8 }
+            });
+        }
+        
+        // Local model losses
+        const colors = {
+            'xgboost': '#05c46b',
+            'random_forest': '#ffa801',
+            'catboost': '#3dc7ff'
+        };
+        
+        Object.entries(localData).forEach(([modelName, data]) => {
+            if (data && data.length > 0 && modelName !== 'system') {
+                traces.push({
+                    x: data.map(d => d.round),
+                    y: data.map(d => d.loss),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: modelName.replace('_', ' ').toUpperCase(),
+                    line: { color: colors[modelName] || '#6c757d', width: 2 },
+                    marker: { size: 6 }
+                });
+            }
+        });
+        
+        const layout = {
+            title: 'Loss Convergence Over Training Rounds',
+            xaxis: { title: 'Training Round' },
+            yaxis: { title: 'Loss' },
+            autosize: true,
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' },
+            margin: { l: 60, r: 20, t: 60, b: 60 },
+            legend: { orientation: 'h', y: -0.2 }
+        };
+        
+        Plotly.newPlot(container, traces, layout, { responsive: true, displayModeBar: false });
+        this.charts.lossConvergence = container;
+    }
+    
+    createTrainingTimeChart() {
+        const container = document.getElementById('training-time-chart');
+        this.removeLoadingOverlay(container);
+        
+        if (!this.latestMetrics) {
+            this.showNoDataMessage(container, 'No training time data available');
+            return;
+        }
+        
+        const models = [];
+        const times = [];
+        const colors = [];
+        
+        // Global model
+        if (this.latestMetrics.global && this.latestMetrics.global.training_time !== undefined) {
+            models.push('Global MLP');
+            times.push(this.latestMetrics.global.training_time);
+            colors.push('#4361ee');
+        }
+        
+        // Local models
+        const localColors = {
+            'xgboost': '#05c46b',
+            'random_forest': '#ffa801',
+            'catboost': '#3dc7ff'
+        };
+        
+        if (this.latestMetrics.local) {
+            Object.entries(this.latestMetrics.local).forEach(([modelName, metrics]) => {
+                if (metrics && metrics.training_time !== undefined) {
+                    models.push(modelName.replace('_', ' ').toUpperCase());
+                    times.push(metrics.training_time);
+                    colors.push(localColors[modelName] || '#6c757d');
+                }
+            });
+        }
+        
+        const trace = {
+            x: models,
+            y: times,
+            type: 'bar',
+            marker: { color: colors },
+            text: times.map(t => formatTime(t)),
+            textposition: 'auto'
+        };
+        
+        const layout = {
+            title: 'Training Time Comparison',
+            xaxis: { title: 'Model' },
+            yaxis: { title: 'Training Time (seconds)' },
+            autosize: true,
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' },
+            margin: { l: 60, r: 20, t: 60, b: 60 }
+        };
+        
+        Plotly.newPlot(container, [trace], layout, { responsive: true, displayModeBar: false });
+        this.charts.trainingTime = container;
+    }
+    
+    createImprovementHeatmap() {
+        const container = document.getElementById('improvement-heatmap');
+        this.removeLoadingOverlay(container);
+        
+        if (!this.improvements) {
+            this.showNoDataMessage(container, 'No improvement data available');
+            return;
+        }
+        
+        const models = [];
+        const metrics = ['accuracy', 'f1_score', 'precision', 'recall'];
+        const z = [];
+        
+        // Prepare data for heatmap
+        if (this.improvements.global) {
+            models.push('Global MLP');
+            const row = metrics.map(metric => (this.improvements.global[metric] || 0) * 100);
+            z.push(row);
+        }
+        
+        if (this.improvements.local) {
+            Object.entries(this.improvements.local).forEach(([modelName, improvements]) => {
+                models.push(modelName.replace('_', ' ').toUpperCase());
+                const row = metrics.map(metric => (improvements[metric] || 0) * 100);
+                z.push(row);
+            });
+        }
+        
+        const trace = {
+            z: z,
+            x: metrics.map(m => m.replace('_', ' ').toUpperCase()),
+            y: models,
+            type: 'heatmap',
+            colorscale: [
+                [0, '#ff5e57'],
+                [0.5, '#ffa801'],
+                [1, '#05c46b']
+            ],
+            text: z.map(row => row.map(val => val.toFixed(1) + '%')),
+            texttemplate: '%{text}',
+            textfont: { color: 'white' },
+            hoverongaps: false
+        };
+        
+        const layout = {
+            title: 'Performance Improvement Heatmap (%)',
+            xaxis: { title: 'Metrics' },
+            yaxis: { title: 'Models' },
+            autosize: true,
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: chartTheme === 'dark' ? '#e5e7eb' : '#1e293b' },
+            margin: { l: 100, r: 20, t: 60, b: 60 }
+        };
+        
+        Plotly.newPlot(container, [trace], layout, { responsive: true, displayModeBar: false });
+        this.charts.improvementHeatmap = container;
+    }
+    
+    updateModelComparison() {
+        const container = document.getElementById('model-comparison');
+        
+        if (!this.latestMetrics) {
+            container.innerHTML = '<div class="col-12 text-center py-4">No model data available</div>';
+            return;
+        }
+        
+        let html = '';
+        
+        // Global model card
+        if (this.latestMetrics.global) {
+            const metrics = this.latestMetrics.global;
+            html += this.createModelCard('Global MLP', 'global', metrics);
+        }
+        
+        // Local model cards
+        if (this.latestMetrics.local) {
+            Object.entries(this.latestMetrics.local).forEach(([modelName, metrics]) => {
+                if (metrics && modelName !== 'system') {
+                    const displayName = modelName.replace('_', ' ').toUpperCase();
+                    html += this.createModelCard(displayName, modelName, metrics);
+                }
+            });
+        }
+        
+        container.innerHTML = html;
+    }
+    
+    createModelCard(name, type, metrics) {
+        const improvement = this.improvements && this.improvements[type === 'global' ? 'global' : 'local'] 
+            ? this.improvements[type === 'global' ? 'global' : 'local'][type === 'global' ? 'accuracy' : type]?.accuracy || 0
+            : 0;
+        
+        const improvementClass = improvement > 0 ? 'improvement-positive' : 
+                                improvement < 0 ? 'improvement-negative' : 'improvement-neutral';
+        
+        return `
+            <div class="model-card ${type}">
+                <div class="model-name">
+                    ${name}
+                    <span class="metric-improvement ${improvementClass}">
+                        ${improvement > 0 ? '+' : ''}${(improvement * 100).toFixed(1)}%
+                    </span>
+                </div>
+                <div class="model-metrics">
+                    <div class="model-metric">
+                        <span class="model-metric-label">Accuracy:</span>
+                        <span class="model-metric-value">${formatPercentage(metrics.accuracy || 0)}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="model-metric-label">F1 Score:</span>
+                        <span class="model-metric-value">${formatPercentage(metrics.f1_score || 0)}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="model-metric-label">Precision:</span>
+                        <span class="model-metric-value">${formatPercentage(metrics.precision || 0)}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="model-metric-label">Recall:</span>
+                        <span class="model-metric-value">${formatPercentage(metrics.recall || 0)}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="model-metric-label">Loss:</span>
+                        <span class="model-metric-value">${formatNumber(metrics.loss || 0, 3)}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="model-metric-label">Time:</span>
+                        <span class="model-metric-value">${formatTime(metrics.training_time || 0)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    updatePerformanceSummary() {
+        if (!this.metricsData || !this.latestMetrics) return;
+        
+        // Calculate total rounds
+        const globalRounds = this.metricsData.global ? this.metricsData.global.length : 0;
+        document.getElementById('total-rounds').textContent = globalRounds;
+        
+        // Find best accuracy across all models
+        let bestAccuracy = 0;
+        if (this.latestMetrics.global && this.latestMetrics.global.accuracy) {
+            bestAccuracy = Math.max(bestAccuracy, this.latestMetrics.global.accuracy);
+        }
+        if (this.latestMetrics.local) {
+            Object.values(this.latestMetrics.local).forEach(metrics => {
+                if (metrics && metrics.accuracy) {
+                    bestAccuracy = Math.max(bestAccuracy, metrics.accuracy);
+                }
+            });
+        }
+        document.getElementById('best-accuracy').textContent = formatPercentage(bestAccuracy);
+        
+        // Calculate average training time
+        let totalTime = 0;
+        let count = 0;
+        if (this.latestMetrics.global && this.latestMetrics.global.training_time) {
+            totalTime += this.latestMetrics.global.training_time;
+            count++;
+        }
+        if (this.latestMetrics.local) {
+            Object.values(this.latestMetrics.local).forEach(metrics => {
+                if (metrics && metrics.training_time) {
+                    totalTime += metrics.training_time;
+                    count++;
+                }
+            });
+        }
+        const avgTime = count > 0 ? totalTime / count : 0;
+        document.getElementById('avg-training-time').textContent = formatTime(avgTime);
+        
+        // Count active models
+        let activeModels = 0;
+        if (this.latestMetrics.global) activeModels++;
+        if (this.latestMetrics.local) {
+            activeModels += Object.keys(this.latestMetrics.local).filter(k => k !== 'system').length;
+        }
+        document.getElementById('active-models').textContent = activeModels;
+    }
+    
+    updateDetailedTable() {
+        const tbody = document.getElementById('detailed-metrics-tbody');
+        
+        if (!this.metricsData) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No data available</td></tr>';
+            return;
+        }
+        
+        let rows = [];
+        
+        // Global model data
+        if (this.metricsData.global) {
+            this.metricsData.global.forEach(entry => {
+                rows.push({
+                    ...entry,
+                    model: 'Global MLP',
+                    modelType: 'global'
+                });
+            });
+        }
+        
+        // Local model data
+        if (this.metricsData.local) {
+            Object.entries(this.metricsData.local).forEach(([modelName, data]) => {
+                if (data && modelName !== 'system') {
+                    data.forEach(entry => {
+                        rows.push({
+                            ...entry,
+                            model: modelName.replace('_', ' ').toUpperCase(),
+                            modelType: 'local'
+                        });
+                    });
+                }
+            });
+        }
+        
+        // Sort by round and model
+        rows.sort((a, b) => {
+            if (a.round !== b.round) return b.round - a.round; // Latest first
+            return a.model.localeCompare(b.model);
+        });
+        
+        // Apply filters
+        if (this.currentFilters.rounds !== 'all') {
+            const limit = parseInt(this.currentFilters.rounds.replace('last', ''));
+            const maxRound = Math.max(...rows.map(r => r.round));
+            const minRound = maxRound - limit + 1;
+            rows = rows.filter(r => r.round >= minRound);
+        }
+        
+        if (this.currentFilters.models !== 'all') {
+            rows = rows.filter(r => r.modelType === this.currentFilters.models);
+        }
+        
+        // Generate table HTML
+        const html = rows.map(row => `
+            <tr>
+                <td>${row.round}</td>
+                <td>${row.model}</td>
+                <td>${formatPercentage(row.accuracy || 0)}</td>
+                <td>${formatPercentage(row.f1_score || 0)}</td>
+                <td>${formatPercentage(row.precision || 0)}</td>
+                <td>${formatPercentage(row.recall || 0)}</td>
+                <td>${formatNumber(row.loss || 0, 3)}</td>
+                <td>${formatTime(row.training_time || 0)}</td>
+                <td>${new Date(row.timestamp).toLocaleString()}</td>
+            </tr>
+        `).join('');
+        
+        tbody.innerHTML = html || '<tr><td colspan="9" class="text-center py-4">No data matches current filters</td></tr>';
+    }
+    
+    applyFilters() {
+        this.currentFilters.metric = document.getElementById('metric-filter').value;
+        this.currentFilters.rounds = document.getElementById('rounds-filter').value;
+        this.currentFilters.models = document.getElementById('model-filter').value;
+        
+        // Update charts and tables
+        this.createTrainingProgressChart();
+        this.createModelComparisonChart();
+        this.updateDetailedTable();
+        
+        showAlert('Filters applied successfully', 'success', 2000);
+    }
+    
+    resetFilters() {
+        document.getElementById('metric-filter').value = 'accuracy';
+        document.getElementById('rounds-filter').value = 'all';
+        document.getElementById('model-filter').value = 'all';
+        
+        this.currentFilters = {
+            metric: 'accuracy',
+            rounds: 'all',
+            models: 'all'
+        };
+        
+        this.applyFilters();
+        showAlert('Filters reset', 'info', 2000);
+    }
+    
+    async refreshData() {
+        if (this.isLoading) return;
+        
+        this.showRefreshIndicators();
+        await this.loadInitialData();
+        this.hideRefreshIndicators();
+        
+        showAlert('Data refreshed successfully', 'success', 2000);
+    }
+    
+    exportData() {
+        if (!this.metricsData) {
+            showAlert('No data available to export', 'warning');
+            return;
+        }
+        
+        // Prepare data for export
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            metrics_history: this.metricsData,
+            latest_metrics: this.latestMetrics,
+            improvements: this.improvements
+        };
+        
+        // Create and download file
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hetrofl_performance_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showAlert('Performance data exported successfully', 'success');
+    }
+    
+    startAutoRefresh() {
+        this.refreshInterval = setInterval(() => {
+            if (!this.isLoading && !document.hidden) {
+                this.refreshData();
+            }
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
+    
+    handleMetricsUpdate(data) {
+        this.latestMetrics = data;
+        this.updateModelComparison();
+        this.updatePerformanceSummary();
+        
+        // Update charts if they exist
+        if (this.charts.modelComparison) {
+            this.createModelComparisonChart();
+        }
+        if (this.charts.trainingTime) {
+            this.createTrainingTimeChart();
+        }
+    }
+    
+    handleStatusUpdate(data) {
+        // Update UI based on training status
+        if (data.training) {
+            this.startAutoRefresh();
+        }
+    }
+    
+    showLoadingState() {
+        this.isLoading = true;
+        document.querySelectorAll('.loading-overlay').forEach(overlay => {
+            overlay.style.display = 'flex';
+        });
+    }
+    
+    hideLoadingState() {
+        this.isLoading = false;
+        document.querySelectorAll('.loading-overlay').forEach(overlay => {
+            overlay.style.display = 'none';
+        });
+    }
+    
+    removeLoadingOverlay(container) {
+        const overlay = container.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    showNoDataMessage(container, message) {
+        container.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                <div class="text-center">
+                    <i class="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    showRefreshIndicators() {
+        document.querySelectorAll('.refresh-indicator').forEach(indicator => {
+            indicator.classList.add('active');
+        });
+    }
+    
+    hideRefreshIndicators() {
+        document.querySelectorAll('.refresh-indicator').forEach(indicator => {
+            indicator.classList.remove('active');
+        });
+    }
+}
+
+// Initialize Performance Analytics when page loads
+let performanceAnalytics;
+
+function initializeCharts() {
+    performanceAnalytics = new PerformanceAnalytics();
+}
+
+function updateChartsTheme(theme) {
+    if (performanceAnalytics && performanceAnalytics.charts) {
+        Object.values(performanceAnalytics.charts).forEach(chart => {
+            if (chart && chart.layout) {
+                const newLayout = {
+                    ...chart.layout,
+                    font: { color: theme === 'dark' ? '#e5e7eb' : '#1e293b' }
+                };
+                Plotly.relayout(chart, newLayout);
+            }
+        });
+    }
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (performanceAnalytics) {
+        performanceAnalytics.stopAutoRefresh();
+    }
+});
+</script>
+{% endblock %}

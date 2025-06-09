@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+
+{% block title %}HETROFL Workflow - System Visualization{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flow-container {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        box-shadow: var(--shadow);
+        padding: 2rem;
+        height: calc(100vh - 250px);
+        min-height: 600px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .flow-controls {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 100;
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .flow-control-btn {
+        background: var(--light-dark);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .flow-control-btn:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .flow-control-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .flow-stage {
+        position: absolute;
+        background: var(--light-dark);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        padding: 1rem;
+        width: 200px;
+        text-align: center;
+        transition: all 0.5s ease;
+        opacity: 0;
+        transform: scale(0.8);
+        z-index: 10;
+    }
+    
+    .flow-stage.active {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-light);
+    }
+    
+    .flow-stage-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .flow-stage-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .flow-stage-description {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    
+    .flow-arrow {
+        position: absolute;
+        height: 2px;
+        background: var(--border-color);
+        transform-origin: left center;
+        z-index: 5;
+    }
+    
+    .flow-arrow::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: -4px;
+        width: 0;
+        height: 0;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        border-left: 8px solid var(--border-color);
+    }
+    
+    .flow-arrow.active {
+        background: var(--primary-color);
+        box-shadow: 0 0 10px var(--primary-color);
+    }
+    
+    .flow-arrow.active::after {
+        border-left-color: var(--primary-color);
+    }
+    
+    .data-packet {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        box-shadow: 0 0 10px var(--primary-color);
+        z-index: 15;
+        opacity: 0;
+    }
+    
+    .flow-legend {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        z-index: 100;
+    }
+    
+    .flow-legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .flow-legend-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 0.5rem;
+    }
+    
+    .flow-legend-text {
+        font-size: 0.8rem;
+    }
+    
+    .flow-stage.local-model {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+        border-color: var(--success-color);
+    }
+    
+    .flow-stage.global-model {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(99, 102, 241, 0.1));
+        border-color: var(--primary-color);
+    }
+    
+    .flow-stage.data {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+        border-color: var(--warning-color);
+    }
+    
+    .flow-info-panel {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        width: 250px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        z-index: 100;
+    }
+    
+    .flow-info-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .flow-info-description {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+    
+    .flow-info-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .flow-info-step.active {
+        background: var(--light-dark);
+        box-shadow: var(--shadow);
+    }
+    
+    .flow-info-step-number {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 0.75rem;
+    }
+    
+    .flow-info-step-text {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-project-diagram me-2 text-primary"></i>HETROFL Workflow</h2>
+                    <p class="text-muted mb-0">Interactive visualization of the federated learning system workflow</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="start-animation-btn">
+                        <i class="fas fa-play me-2"></i>Start Animation
+                    </button>
+                    <button class="btn btn-outline-secondary" id="reset-animation-btn">
+                        <i class="fas fa-undo me-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="flow-container" id="flow-diagram">
+                <!-- Flow controls -->
+                <div class="flow-controls">
+                    <button class="flow-control-btn active" data-speed="1">
+                        <i class="fas fa-play"></i> Normal
+                    </button>
+                    <button class="flow-control-btn" data-speed="0.5">
+                        <i class="fas fa-fast-forward"></i> Fast
+                    </button>
+                    <button class="flow-control-btn" data-speed="2">
+                        <i class="fas fa-slow-motion"></i> Slow
+                    </button>
+                </div>
+                
+                <!-- Flow information panel -->
+                <div class="flow-info-panel">
+                    <div class="flow-info-title">HETROFL Workflow</div>
+                    <div class="flow-info-description">
+                        Heterogeneous Federated Learning workflow with three local models and one global model.
+                    </div>
+                    
+                    <div class="flow-info-steps">
+                        <div class="flow-info-step" id="step-1">
+                            <div class="flow-info-step-number">1</div>
+                            <div class="flow-info-step-text">Local model training on device data</div>
+                        </div>
+                        <div class="flow-info-step" id="step-2">
+                            <div class="flow-info-step-number">2</div>
+                            <div class="flow-info-step-text">Parameter extraction and encoding</div>
+                        </div>
+                        <div class="flow-info-step" id="step-3">
+                            <div class="flow-info-step-number">3</div>
+                            <div class="flow-info-step-text">Secure aggregation of model updates</div>
+                        </div>
+                        <div class="flow-info-step" id="step-4">
+                            <div class="flow-info-step-number">4</div>
+                            <div class="flow-info-step-text">Global model update</div>
+                        </div>
+                        <div class="flow-info-step" id="step-5">
+                            <div class="flow-info-step-number">5</div>
+                            <div class="flow-info-step-text">Global model distribution</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Legend -->
+                <div class="flow-legend">
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-icon" style="background: var(--success-color); border-radius: 50%;"></div>
+                        <div class="flow-legend-text">Local Models</div>
+                    </div>
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-icon" style="background: var(--primary-color); border-radius: 50%;"></div>
+                        <div class="flow-legend-text">Global Model</div>
+                    </div>
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-icon" style="background: var(--warning-color); border-radius: 50%;"></div>
+                        <div class="flow-legend-text">Data Flow</div>
+                    </div>
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-icon" style="height: 2px; background: var(--primary-color);"></div>
+                        <div class="flow-legend-text">Communication</div>
+                    </div>
+                </div>
+                
+                <!-- Flow stages - Local Models -->
+                <div class="flow-stage local-model" id="local-model-1" style="top: 20%; left: 20%;">
+                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
+                    <div class="flow-stage-title">XGBoost</div>
+                    <div class="flow-stage-description">Gradient boosting local model</div>
+                </div>
+                
+                <div class="flow-stage local-model" id="local-model-2" style="top: 50%; left: 20%;">
+                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
+                    <div class="flow-stage-title">Random Forest</div>
+                    <div class="flow-stage-description">Ensemble decision trees model</div>
+                </div>
+                
+                <div class="flow-stage local-model" id="local-model-3" style="top: 80%; left: 20%;">
+                    <i class="fas fa-laptop flow-stage-icon text-success"></i>
+                    <div class="flow-stage-title">CatBoost</div>
+                    <div class="flow-stage-description">Categorical boosting model</div>
+                </div>
+                
+                <!-- Flow stages - Data Sources -->
+                <div class="flow-stage data" id="data-source-1" style="top: 20%; left: 5%;">
+                    <i class="fas fa-database flow-stage-icon text-warning"></i>
+                    <div class="flow-stage-title">Dataset A</div>
+                    <div class="flow-stage-description">Local training data</div>
+                </div>
+                
+                <div class="flow-stage data" id="data-source-2" style="top: 50%; left: 5%;">
+                    <i class="fas fa-database flow-stage-icon text-warning"></i>
+                    <div class="flow-stage-title">Dataset B</div>
+                    <div class="flow-stage-description">Local training data</div>
+                </div>
+                
+                <div class="flow-stage data" id="data-source-3" style="top: 80%; left: 5%;">
+                    <i class="fas fa-database flow-stage-icon text-warning"></i>
+                    <div class="flow-stage-title">Dataset C</div>
+                    <div class="flow-stage-description">Local training data</div>
+                </div>
+                
+                <!-- Flow stages - Aggregation -->
+                <div class="flow-stage" id="aggregation" style="top: 50%; left: 50%;">
+                    <i class="fas fa-code-branch flow-stage-icon text-info"></i>
+                    <div class="flow-stage-title">Aggregation</div>
+                    <div class="flow-stage-description">Secure model update aggregation</div>
+                </div>
+                
+                <!-- Flow stages - Global Model -->
+                <div class="flow-stage global-model" id="global-model" style="top: 50%; left: 80%;">
+                    <i class="fas fa-globe flow-stage-icon text-primary"></i>
+                    <div class="flow-stage-title">Global Model</div>
+                    <div class="flow-stage-description">Neural network ensemble model</div>
+                </div>
+                
+                <!-- Flow stages - Evaluation -->
+                <div class="flow-stage" id="evaluation" style="top: 20%; left: 80%;">
+                    <i class="fas fa-chart-line flow-stage-icon text-danger"></i>
+                    <div class="flow-stage-title">Evaluation</div>
+                    <div class="flow-stage-description">Performance assessment</div>
+                </div>
+                
+                <!-- Flow Arrows - Initial setup, will be dynamically adjusted -->
+                <!-- Data to Local Models -->
+                <div class="flow-arrow" id="arrow-data-1-local-1"></div>
+                <div class="flow-arrow" id="arrow-data-2-local-2"></div>
+                <div class="flow-arrow" id="arrow-data-3-local-3"></div>
+                
+                <!-- Local Models to Aggregation -->
+                <div class="flow-arrow" id="arrow-local-1-aggregation"></div>
+                <div class="flow-arrow" id="arrow-local-2-aggregation"></div>
+                <div class="flow-arrow" id="arrow-local-3-aggregation"></div>
+                
+                <!-- Aggregation to Global Model -->
+                <div class="flow-arrow" id="arrow-aggregation-global"></div>
+                
+                <!-- Global Model to Evaluation -->
+                <div class="flow-arrow" id="arrow-global-evaluation"></div>
+                
+                <!-- Global Model back to Local Models -->
+                <div class="flow-arrow" id="arrow-global-local-1"></div>
+                <div class="flow-arrow" id="arrow-global-local-2"></div>
+                <div class="flow-arrow" id="arrow-global-local-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let animationSpeed = 1;
+let animationRunning = false;
+let currentStep = 0;
+let animationInterval = null;
+
+// Element references
+const flowDiagram = document.getElementById('flow-diagram');
+const startButton = document.getElementById('start-animation-btn');
+const resetButton = document.getElementById('reset-animation-btn');
+const speedButtons = document.querySelectorAll('.flow-control-btn');
+const infoSteps = document.querySelectorAll('.flow-info-step');
+
+// Flow stages
+const stages = {
+    dataSources: [
+        document.getElementById('data-source-1'),
+        document.getElementById('data-source-2'),
+        document.getElementById('data-source-3')
+    ],
+    localModels: [
+        document.getElementById('local-model-1'),
+        document.getElementById('local-model-2'),
+        document.getElementById('local-model-3')
+    ],
+    aggregation: document.getElementById('aggregation'),
+    globalModel: document.getElementById('global-model'),
+    evaluation: document.getElementById('evaluation')
+};
+
+// Flow arrows
+const arrows = {
+    dataToLocal: [
+        document.getElementById('arrow-data-1-local-1'),
+        document.getElementById('arrow-data-2-local-2'),
+        document.getElementById('arrow-data-3-local-3')
+    ],
+    localToAggregation: [
+        document.getElementById('arrow-local-1-aggregation'),
+        document.getElementById('arrow-local-2-aggregation'),
+        document.getElementById('arrow-local-3-aggregation')
+    ],
+    aggregationToGlobal: document.getElementById('arrow-aggregation-global'),
+    globalToEvaluation: document.getElementById('arrow-global-evaluation'),
+    globalToLocal: [
+        document.getElementById('arrow-global-local-1'),
+        document.getElementById('arrow-global-local-2'),
+        document.getElementById('arrow-global-local-3')
+    ]
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize arrow positions
+    positionArrows();
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Initialize stages (show only data sources initially)
+    initializeStages();
+    
+    // Resize handler
+    window.addEventListener('resize', positionArrows);
+});
+
+// Setup event listeners
+function setupEventListeners() {
+    // Start animation button
+    startButton.addEventListener('click', function() {
+        if (animationRunning) {
+            pauseAnimation();
+            startButton.innerHTML = '<i class="fas fa-play me-2"></i>Resume Animation';
+        } else {
+            startAnimation();
+            startButton.innerHTML = '<i class="fas fa-pause me-2"></i>Pause Animation';
+        }
+    });
+    
+    // Reset animation button
+    resetButton.addEventListener('click', resetAnimation);
+    
+    // Speed control buttons
+    speedButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            speedButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update animation speed
+            animationSpeed = parseFloat(this.dataset.speed);
+        });
+    });
+}
+
+// Position arrows between elements
+function positionArrows() {
+    // Helper function to position arrow between two elements
+    function positionArrow(arrow, fromElement, toElement) {
+        const fromRect = fromElement.getBoundingClientRect();
+        const toRect = toElement.getBoundingClientRect();
+        const containerRect = flowDiagram.getBoundingClientRect();
+        
+        // Calculate center points relative to container
+        const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
+        const fromY = fromRect.top + fromRect.height / 2 - containerRect.top;
+        const toX = toRect.left + toRect.width / 2 - containerRect.left;
+        const toY = toRect.top + toRect.height / 2 - containerRect.top;
+        
+        // Calculate distance and angle
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        // Set arrow position and rotation
+        arrow.style.left = `${fromX}px`;
+        arrow.style.top = `${fromY}px`;
+        arrow.style.width = `${length}px`;
+        arrow.style.transform = `rotate(${angle}deg)`;
+    }
+    
+    // Position data to local model arrows
+    for (let i = 0; i < 3; i++) {
+        positionArrow(arrows.dataToLocal[i], stages.dataSources[i], stages.localModels[i]);
+    }
+    
+    // Position local model to aggregation arrows
+    for (let i = 0; i < 3; i++) {
+        positionArrow(arrows.localToAggregation[i], stages.localModels[i], stages.aggregation);
+    }
+    
+    // Position aggregation to global model arrow
+    positionArrow(arrows.aggregationToGlobal, stages.aggregation, stages.globalModel);
+    
+    // Position global model to evaluation arrow
+    positionArrow(arrows.globalToEvaluation, stages.globalModel, stages.evaluation);
+    
+    // Position global model back to local models arrows
+    for (let i = 0; i < 3; i++) {
+        positionArrow(arrows.globalToLocal[i], stages.globalModel, stages.localModels[i]);
+    }
+}
+
+// Initialize stages
+function initializeStages() {
+    // Show only data sources initially
+    stages.dataSources.forEach(stage => {
+        stage.classList.add('active');
+    });
+    
+    // Hide all other stages
+    stages.localModels.forEach(stage => {
+        stage.classList.remove('active');
+    });
+    stages.aggregation.classList.remove('active');
+    stages.globalModel.classList.remove('active');
+    stages.evaluation.classList.remove('active');
+}
+
+// Start animation
+function startAnimation() {
+    if (animationRunning) return;
+    
+    animationRunning = true;
+    
+    // If animation was reset, start from beginning
+    if (currentStep === 0) {
+        resetAnimation(false);
+    }
+    
+    // Start the animation sequence
+    animationInterval = setInterval(animationStep, 3000 * animationSpeed);
+}
+
+// Pause animation
+function pauseAnimation() {
+    if (!animationRunning) return;
+    
+    animationRunning = false;
+    clearInterval(animationInterval);
+}
+
+// Reset animation
+function resetAnimation(fullReset = true) {
+    // Stop current animation
+    pauseAnimation();
+    
+    if (fullReset) {
+        // Reset button text
+        startButton.innerHTML = '<i class="fas fa-play me-2"></i>Start Animation';
+    }
+    
+    // Reset step counter
+    currentStep = 0;
+    
+    // Remove all active classes
+    document.querySelectorAll('.flow-stage').forEach(stage => {
+        stage.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.flow-arrow').forEach(arrow => {
+        arrow.classList.remove('active');
+    });
+    
+    // Remove any data packets
+    document.querySelectorAll('.data-packet').forEach(packet => {
+        packet.remove();
+    });
+    
+    // Reset info steps
+    infoSteps.forEach(step => {
+        step.classList.remove('active');
+    });
+    
+    // Initialize stages again
+    initializeStages();
+}
+
+// Animation step
+function animationStep() {
+    // Remove active class from all info steps
+    infoSteps.forEach(step => step.classList.remove('active'));
+    
+    // Add active class to current step
+    if (currentStep < infoSteps.length) {
+        infoSteps[currentStep].classList.add('active');
+    }
+    
+    switch (currentStep) {
+        case 0: // Data to Local Models
+            // Activate local models
+            stages.localModels.forEach(model => model.classList.add('active'));
+            
+            // Activate data arrows
+            arrows.dataToLocal.forEach(arrow => arrow.classList.add('active'));
+            
+            // Animate data packets
+            arrows.dataToLocal.forEach(arrow => {
+                animateDataPacket(arrow);
+            });
+            break;
+            
+        case 1: // Local Models to Aggregation
+            // Activate aggregation
+            stages.aggregation.classList.add('active');
+            
+            // Activate local to aggregation arrows
+            arrows.localToAggregation.forEach(arrow => arrow.classList.add('active'));
+            
+            // Animate data packets
+            arrows.localToAggregation.forEach(arrow => {
+                animateDataPacket(arrow);
+            });
+            break;
+            
+        case 2: // Aggregation to Global Model
+            // Activate global model
+            stages.globalModel.classList.add('active');
+            
+            // Activate aggregation to global arrow
+            arrows.aggregationToGlobal.classList.add('active');
+            
+            // Animate data packet
+            animateDataPacket(arrows.aggregationToGlobal);
+            break;
+            
+        case 3: // Global Model to Evaluation
+            // Activate evaluation
+            stages.evaluation.classList.add('active');
+            
+            // Activate global to evaluation arrow
+            arrows.globalToEvaluation.classList.add('active');
+            
+            // Animate data packet
+            animateDataPacket(arrows.globalToEvaluation);
+            break;
+            
+        case 4: // Global Model back to Local Models
+            // Activate global to local arrows
+            arrows.globalToLocal.forEach(arrow => arrow.classList.add('active'));
+            
+            // Animate data packets
+            arrows.globalToLocal.forEach(arrow => {
+                animateDataPacket(arrow);
+            });
+            break;
+            
+        case 5: // Complete cycle - reset for next round
+            setTimeout(() => {
+                // Fade out all arrows
+                document.querySelectorAll('.flow-arrow').forEach(arrow => {
+                    arrow.classList.remove('active');
+                });
+                
+                // Keep all stages active
+            }, 1500);
+            
+            // Reset to step 1 after delay
+            setTimeout(() => {
+                currentStep = 0;
+                animationStep();
+            }, 3000 * animationSpeed);
+            
+            // Return to prevent currentStep increment
+            return;
+    }
+    
+    // Increment step counter
+    currentStep++;
+}
+
+// Animate data packet along an arrow
+function animateDataPacket(arrow) {
+    // Create a data packet
+    const packet = document.createElement('div');
+    packet.className = 'data-packet';
+    flowDiagram.appendChild(packet);
+    
+    // Get arrow dimensions and position
+    const arrowRect = arrow.getBoundingClientRect();
+    const containerRect = flowDiagram.getBoundingClientRect();
+    
+    // Calculate start position (relative to container)
+    const startX = arrowRect.left - containerRect.left;
+    const startY = arrowRect.top - containerRect.top;
+    
+    // Set initial position
+    packet.style.left = `${startX}px`;
+    packet.style.top = `${startY}px`;
+    
+    // Get arrow angle
+    const transformStyle = window.getComputedStyle(arrow).getPropertyValue('transform');
+    const matrix = new DOMMatrix(transformStyle);
+    const angle = Math.atan2(matrix.b, matrix.a);
+    
+    // Calculate end position
+    const length = arrow.offsetWidth;
+    const endX = startX + Math.cos(angle) * length;
+    const endY = startY + Math.sin(angle) * length;
+    
+    // Show packet
+    packet.style.opacity = '1';
+    
+    // Animate packet along arrow
+    const animationDuration = 1500 * animationSpeed;
+    const startTime = performance.now();
+    
+    function animatePacket(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1);
+        
+        const currentX = startX + (endX - startX) * progress;
+        const currentY = startY + (endY - startY) * progress;
+        
+        packet.style.left = `${currentX}px`;
+        packet.style.top = `${currentY}px`;
+        
+        if (progress < 1) {
+            requestAnimationFrame(animatePacket);
+        } else {
+            // Animation complete - remove packet
+            setTimeout(() => {
+                packet.remove();
+            }, 200);
+        }
+    }
+    
+    requestAnimationFrame(animatePacket);
+}
+</script>
+{% endblock %} 
